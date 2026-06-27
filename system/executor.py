@@ -101,6 +101,51 @@ Available commands:
             "Type 'help' for available commands."
         )
 
+    def execute_intent(self, intent: dict[str, str | None]) -> str:
+        """Run a structured intent produced by the intent engine."""
+        action = intent.get("action", "unknown")
+        value = intent.get("value")
+
+        if action == "help":
+            return self.HELP_TEXT
+
+        if action == "exit":
+            return "__EXIT__"
+
+        if action == "shutdown":
+            return self.system_control.shutdown()
+
+        if action == "restart":
+            return self.system_control.restart()
+
+        if action == "open_app" and value:
+            return self.app_launcher.open_app(value)
+
+        if action == "close_app" and value:
+            return self.app_launcher.close_app(value)
+
+        if action == "open_folder" and value:
+            return self.file_manager.open_folder(value)
+
+        if action == "open_file" and value:
+            return self.file_manager.open_file(value)
+
+        if action == "search_file" and value:
+            results = self.file_manager.search_files(value)
+            return self.file_manager.format_search_results(value, results)
+
+        if action == "unknown":
+            original = value or "that request"
+            return (
+                f"I don't know how to handle '{original}'.\n"
+                "Type 'help' for available commands."
+            )
+
+        return (
+            f"Unknown action: '{action}'\n"
+            "Type 'help' for available commands."
+        )
+
     def _open_generic(self, target: str) -> str:
         """Resolve ambiguous 'open <target>' commands."""
         stripped = target.strip()
