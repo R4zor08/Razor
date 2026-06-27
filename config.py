@@ -29,7 +29,9 @@ MIN_SPEECH_MS = 300  # ignore utterances shorter than this
 
 # AI
 OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL = "llama3"
+OLLAMA_MODEL = "llama3.2:3b"
+OLLAMA_TIMEOUT = 60
+AI_ENABLED = True
 
 # Paths
 ASSETS_DIR = "assets"
