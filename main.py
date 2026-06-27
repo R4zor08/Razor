@@ -1,20 +1,34 @@
 """Razor AI — entry point."""
 
 import argparse
+import json
 import sys
 import time
 
 import config
+from core.command_router import CommandRouter
 from system.executor import Executor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def run_cli() -> None:
+def process_command(text: str, *, use_ai: bool = True, show_intent: bool = True) -> str:
+    """Parse and execute a command using AI or deterministic parsing."""
+    if use_ai and config.AI_ENABLED:
+        router = CommandRouter()
+        intent = router.intent_engine.parse(text)
+        if show_intent:
+            print(f"Intent: {json.dumps(intent)}")
+        return router.route(intent)
+
+    return Executor().execute(text)
+
+
+def run_cli(*, use_ai: bool = True) -> None:
     """Interactive CLI for deterministic command execution."""
-    executor = Executor()
-    print(f"{config.APP_NAME} v{config.APP_VERSION} — CLI mode")
+    mode = "AI" if use_ai and config.AI_ENABLED else "CLI"
+    print(f"{config.APP_NAME} v{config.APP_VERSION} — {mode} mode")
     print("Type a command or 'help' for available commands. Type 'exit' to quit.\n")
 
     while True:
@@ -27,7 +41,7 @@ def run_cli() -> None:
         if not command:
             continue
 
-        result = executor.execute(command)
+        result = process_command(command, use_ai=use_ai)
         if result == "__EXIT__":
             print("Goodbye.")
             break
@@ -95,7 +109,7 @@ def listen_for_single_command(stt_engine: str | None = None) -> str | None:
     return result["text"]
 
 
-def run_wake_assistant(stt_engine: str | None = None) -> None:
+def run_wake_assistant(stt_engine: str | None = None, *, use_ai: bool = True) -> None:
     """Wake word loop: wait for 'Hey Razor', respond, then listen for a command."""
     from voice.wake_word import WakeWord
 
@@ -104,6 +118,8 @@ def run_wake_assistant(stt_engine: str | None = None) -> None:
 
     print(f"{config.APP_NAME} v{config.APP_VERSION} — Wake word mode")
     print(f"Say '{config.WAKE_PHRASE.title()}' to activate.")
+    if use_ai and config.AI_ENABLED:
+        print("Natural language commands enabled via Ollama.")
     print("Press Ctrl+C to stop.\n")
 
     try:
@@ -116,6 +132,9 @@ def run_wake_assistant(stt_engine: str | None = None) -> None:
             command = trailing_command or listen_for_single_command(stt_engine=engine)
             if command:
                 print(f">> {command}")
+                result = process_command(command, use_ai=use_ai)
+                if result and result != "__EXIT__":
+                    print(result)
             else:
                 print("(no command heard)")
 
@@ -126,10 +145,10 @@ def run_wake_assistant(stt_engine: str | None = None) -> None:
         wake.stop()
 
 
-def run_voice(stt_engine: str | None = None, *, direct: bool = False) -> None:
+def run_voice(stt_engine: str | None = None, *, direct: bool = False, use_ai: bool = True) -> None:
     """Voice input — wake word mode by default, or direct always-listening mode."""
     if not direct:
-        run_wake_assistant(stt_engine=stt_engine)
+        run_wake_assistant(stt_engine=stt_engine, use_ai=use_ai)
         return
 
     from voice.listener import Listener
@@ -182,6 +201,10 @@ def run_voice(stt_engine: str | None = None, *, direct: bool = False) -> None:
                 print("\r" + " " * 24 + "\r", end="")
                 listening_indicator = False
             print(f">> {final_text}")
+            if use_ai and config.AI_ENABLED:
+                result = process_command(final_text, use_ai=use_ai)
+                if result and result != "__EXIT__":
+                    print(result)
             stt.reset()
 
     try:
@@ -222,14 +245,21 @@ def main() -> None:
         default=None,
         help=f"Speech-to-text engine for commands (default: {config.STT_ENGINE})",
     )
+    parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Disable Ollama and use deterministic command parsing only",
+    )
     args = parser.parse_args()
+
+    use_ai = not args.no_ai
 
     logger.info("Starting %s v%s", config.APP_NAME, config.APP_VERSION)
 
     if args.voice or args.voice_direct:
-        run_voice(stt_engine=args.stt, direct=args.voice_direct)
+        run_voice(stt_engine=args.stt, direct=args.voice_direct, use_ai=use_ai)
     else:
-        run_cli()
+        run_cli(use_ai=use_ai)
 
 
 if __name__ == "__main__":
