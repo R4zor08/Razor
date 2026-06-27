@@ -2,6 +2,6 @@
 
 
 class OllamaClient:
-    """Communicates with  a local Ollama instance."""
+    """Communicates with the local Ollama instance."""
 
     pass
