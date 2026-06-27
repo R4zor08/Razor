@@ -4,6 +4,8 @@ APP_NAME = "Razor AI"
 APP_VERSION = "0.1.0"
 
 # Voice
+WAKE_PHRASE = "hey razor"
+WAKE_RESPONSE = "Yes mate?"
 WAKE_WORD = "razor"
 SAMPLE_RATE = 16000
 VOICE_BLOCK_MS = 250
