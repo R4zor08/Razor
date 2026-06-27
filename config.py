@@ -15,3 +15,7 @@ OLLAMA_MODEL = "llama3"
 ASSETS_DIR = "assets"
 AUDIO_DIR = "assets/audio"
 LOGS_DIR = "assets/logs"
+
+# File search
+FILE_SEARCH_MAX_RESULTS = 25
+FILE_SEARCH_DEPTH = 6
