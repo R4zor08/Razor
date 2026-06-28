@@ -12,6 +12,40 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+_tts_instance = None
+
+
+def get_tts():
+    """Return a configured TTS instance, or None if unavailable."""
+    global _tts_instance
+    if not config.TTS_ENABLED:
+        return None
+    if _tts_instance is None:
+        from voice.text_to_speech import TextToSpeech
+
+        tts = TextToSpeech()
+        if not tts.is_configured():
+            logger.warning("TTS is enabled but not configured.")
+            return None
+        _tts_instance = tts
+    return _tts_instance
+
+
+def speak(text: str, *, personality: bool = True) -> None:
+    """Speak text aloud with optional Australian personality."""
+    from voice.text_to_speech import TTSError
+    from utils.personality import format_spoken_response, format_wake_response
+
+    tts = get_tts()
+    if not tts:
+        return
+
+    spoken = format_spoken_response(text) if personality else format_wake_response(text)
+    try:
+        tts.speak(spoken)
+    except TTSError as exc:
+        logger.warning("TTS failed: %s", exc)
+
 
 def process_command(text: str, *, use_ai: bool = True, show_intent: bool = True) -> str:
     """Parse and execute a command using AI or deterministic parsing."""
@@ -109,7 +143,12 @@ def listen_for_single_command(stt_engine: str | None = None) -> str | None:
     return result["text"]
 
 
-def run_wake_assistant(stt_engine: str | None = None, *, use_ai: bool = True) -> None:
+def run_wake_assistant(
+    stt_engine: str | None = None,
+    *,
+    use_ai: bool = True,
+    use_tts: bool = True,
+) -> None:
     """Wake word loop: wait for 'Hey Razor', respond, then listen for a command."""
     from voice.wake_word import WakeWord
 
@@ -120,6 +159,8 @@ def run_wake_assistant(stt_engine: str | None = None, *, use_ai: bool = True) ->
     print(f"Say '{config.WAKE_PHRASE.title()}' to activate.")
     if use_ai and config.AI_ENABLED:
         print("Natural language commands enabled via Ollama.")
+    if use_tts and config.TTS_ENABLED:
+        print("Australian voice output enabled via ElevenLabs.")
     print("Press Ctrl+C to stop.\n")
 
     try:
@@ -128,6 +169,8 @@ def run_wake_assistant(stt_engine: str | None = None, *, use_ai: bool = True) ->
             trailing_command = wake.wait_for_activation()
 
             print(f"Razor: {config.WAKE_RESPONSE}")
+            if use_tts:
+                speak(config.WAKE_RESPONSE, personality=False)
 
             command = trailing_command or listen_for_single_command(stt_engine=engine)
             if command:
@@ -135,20 +178,32 @@ def run_wake_assistant(stt_engine: str | None = None, *, use_ai: bool = True) ->
                 result = process_command(command, use_ai=use_ai)
                 if result and result != "__EXIT__":
                     print(result)
+                    if use_tts:
+                        speak(result)
             else:
                 print("(no command heard)")
+                if use_tts:
+                    speak("I didn't catch that mate.")
 
             print()
     except KeyboardInterrupt:
         print("\nGoodbye.")
+        if use_tts:
+            speak("Catch ya later mate.", personality=False)
     finally:
         wake.stop()
 
 
-def run_voice(stt_engine: str | None = None, *, direct: bool = False, use_ai: bool = True) -> None:
+def run_voice(
+    stt_engine: str | None = None,
+    *,
+    direct: bool = False,
+    use_ai: bool = True,
+    use_tts: bool = True,
+) -> None:
     """Voice input — wake word mode by default, or direct always-listening mode."""
     if not direct:
-        run_wake_assistant(stt_engine=stt_engine, use_ai=use_ai)
+        run_wake_assistant(stt_engine=stt_engine, use_ai=use_ai, use_tts=use_tts)
         return
 
     from voice.listener import Listener
@@ -201,10 +256,11 @@ def run_voice(stt_engine: str | None = None, *, direct: bool = False, use_ai: bo
                 print("\r" + " " * 24 + "\r", end="")
                 listening_indicator = False
             print(f">> {final_text}")
-            if use_ai and config.AI_ENABLED:
-                result = process_command(final_text, use_ai=use_ai)
-                if result and result != "__EXIT__":
-                    print(result)
+            result = process_command(final_text, use_ai=use_ai)
+            if result and result != "__EXIT__":
+                print(result)
+                if use_tts:
+                    speak(result)
             stt.reset()
 
     try:
@@ -250,14 +306,20 @@ def main() -> None:
         action="store_true",
         help="Disable Ollama and use deterministic command parsing only",
     )
+    parser.add_argument(
+        "--no-tts",
+        action="store_true",
+        help="Disable ElevenLabs voice output",
+    )
     args = parser.parse_args()
 
     use_ai = not args.no_ai
+    use_tts = not args.no_tts
 
     logger.info("Starting %s v%s", config.APP_NAME, config.APP_VERSION)
 
     if args.voice or args.voice_direct:
-        run_voice(stt_engine=args.stt, direct=args.voice_direct, use_ai=use_ai)
+        run_voice(stt_engine=args.stt, direct=args.voice_direct, use_ai=use_ai, use_tts=use_tts)
     else:
         run_cli(use_ai=use_ai)
 
