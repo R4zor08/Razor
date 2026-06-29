@@ -1,0 +1,59 @@
+2026-06-29 11:08:12,950 [INFO] core.intent_engine: Parsing intent for: open app notepad
+2026-06-29 11:08:19,833 [INFO] core.brain: Brain resolved intent: {'action': 'open_app', 'value': 'notepad'}
+2026-06-29 11:08:19,948 [INFO] core.intent_engine: Parsing intent for: shutdown
+2026-06-29 11:08:24,517 [INFO] core.brain: Brain resolved intent: {'action': 'shutdown', 'value': None}
+2026-06-29 11:15:04,737 [INFO] core.intent_engine: Parsing intent for: Can you open notepad for me
+2026-06-29 11:15:59,035 [INFO] core.intent_engine: Parsing intent for: razor> can you open notepad for me
+2026-06-29 11:16:02,491 [INFO] core.brain: Brain resolved intent: {'action': 'open_app', 'value': 'notepad'}
+2026-06-29 11:16:02,826 [INFO] core.intent_engine: Parsing intent for: razor> turn the volume down
+2026-06-29 11:16:06,359 [INFO] core.brain: Brain resolved intent: {'action': 'set_volume', 'value': 'down'}
+2026-06-29 11:16:10,171 [INFO] core.intent_engine: Parsing intent for: razor> open my downloads folder
+2026-06-29 11:16:12,813 [INFO] core.brain: Brain resolved intent: {'action': 'open_folder', 'value': 'downloads'}
+2026-06-29 11:16:27,422 [INFO] core.intent_engine: Parsing intent for: exit
+2026-06-29 11:16:31,282 [INFO] core.brain: Brain resolved intent: {'action': 'exit', 'value': None}
+2026-06-29 11:16:36,978 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:16:40,936 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-29 11:16:50,484 [INFO] core.assistant: Starting Razor AI v0.1.0
+2026-06-29 11:16:50,486 [INFO] core.assistant: Idle — listening for wake phrase 'hey razor'
+2026-06-29 11:16:51,366 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-29 11:16:53,144 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=750ms)
+2026-06-29 11:16:53,144 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-29 11:17:04,705 [INFO] voice.wake_word: Wake phrase detected
+2026-06-29 11:17:05,192 [INFO] voice.listener: Microphone stream stopped.
+2026-06-29 11:17:05,678 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:17:07,381 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-29 11:17:07,483 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=750ms)
+2026-06-29 11:17:43,861 [INFO] voice.speech_to_text: Loading Whisper model 'base.en' (device=cpu, compute=int8)
+2026-06-29 11:17:47,298 [INFO] voice.listener: Microphone stream stopped.
+2026-06-29 11:17:47,334 [INFO] core.intent_engine: Parsing intent for: Open up button.
+2026-06-29 11:17:53,327 [INFO] core.brain: Brain resolved intent: {'action': 'open_file', 'value': 'button'}
+2026-06-29 11:18:17,504 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:18:33,639 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-29 11:18:33,650 [INFO] core.assistant: Idle — listening for wake phrase 'hey razor'
+2026-06-29 11:18:33,941 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=750ms)
+2026-06-29 11:18:33,941 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-29 11:29:36,262 [INFO] voice.listener: Microphone stream stopped.
+2026-06-29 11:29:36,996 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:29:39,005 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-29 11:29:51,283 [INFO] core.assistant: Starting Razor AI v0.1.0
+2026-06-29 11:29:51,285 [INFO] core.assistant: Idle — listening for wake phrase 'hey razor'
+2026-06-29 11:29:51,444 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-29 11:29:52,649 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=750ms)
+2026-06-29 11:29:52,649 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-29 11:40:16,518 [INFO] voice.wake_word: Wake phrase detected
+2026-06-29 11:40:17,279 [INFO] voice.listener: Microphone stream stopped.
+2026-06-29 11:40:17,949 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:40:19,962 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-29 11:40:19,969 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-29 11:40:20,691 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=750ms)
+2026-06-29 11:40:28,232 [INFO] voice.listener: Microphone stream stopped.
+2026-06-29 11:40:28,268 [INFO] core.intent_engine: Parsing intent for: can you have been calculator
+2026-06-29 11:40:59,749 [INFO] core.brain: Brain resolved intent: {'action': 'unknown', 'value': 'have been calculator'}
+2026-06-29 11:41:00,042 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:41:07,311 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-29 11:41:07,319 [INFO] core.assistant: Idle — listening for wake phrase 'hey razor'
+2026-06-29 11:41:07,578 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=750ms)
+2026-06-29 11:41:07,579 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-29 11:41:19,619 [INFO] voice.listener: Microphone stream stopped.
+2026-06-29 11:41:20,062 [WARNING] voice.text_to_speech: ElevenLabs failed (ElevenLabs free plan cannot use library voices via the API. Upgrade your plan, use a voice you created/cloned, or set TTS_PROVIDER=local in config.). Falling back to local TTS.
+2026-06-29 11:41:22,057 [INFO] voice.text_to_speech: Spoke via local TTS
