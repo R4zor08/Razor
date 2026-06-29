@@ -18,6 +18,16 @@ VALID_ACTIONS = frozenset(
         "open_folder",
         "open_file",
         "search_file",
+        "set_volume",
+        "set_brightness",
+        "minimize_window",
+        "maximize_window",
+        "close_window",
+        "switch_app",
+        "run_shortcut",
+        "type_text",
+        "mouse_click",
+        "scroll",
         "shutdown",
         "restart",
         "help",
@@ -26,7 +36,19 @@ VALID_ACTIONS = frozenset(
     }
 )
 
-NULL_VALUE_ACTIONS = frozenset({"shutdown", "restart", "help", "exit"})
+NULL_VALUE_ACTIONS = frozenset(
+    {
+        "shutdown",
+        "restart",
+        "help",
+        "exit",
+        "minimize_window",
+        "maximize_window",
+        "close_window",
+        "switch_app",
+        "mouse_click",
+    }
+)
 
 
 class IntentEngine:
@@ -74,6 +96,8 @@ class IntentEngine:
             return {"action": action, "value": None}
 
         if value is None or str(value).strip() == "":
+            if action in {"set_volume", "set_brightness", "scroll", "run_shortcut", "type_text"}:
+                return {"action": "unknown", "value": original_text}
             return {"action": "unknown", "value": original_text}
 
         return {"action": action, "value": str(value).strip()}
@@ -90,6 +114,33 @@ class IntentEngine:
             return {"action": "shutdown", "value": None}
         if any(p in lowered for p in ("restart", "reboot")):
             return {"action": "restart", "value": None}
+        if any(p in lowered for p in ("volume up", "turn up the volume", "louder")):
+            return {"action": "set_volume", "value": "up"}
+        if any(p in lowered for p in ("volume down", "turn down the volume", "quieter")):
+            return {"action": "set_volume", "value": "down"}
+        if "mute" in lowered and "volume" in lowered:
+            return {"action": "set_volume", "value": "mute"}
+        if any(p in lowered for p in ("brightness up", "brighter")):
+            return {"action": "set_brightness", "value": "up"}
+        if any(p in lowered for p in ("brightness down", "dimmer")):
+            return {"action": "set_brightness", "value": "down"}
+        if "minimize" in lowered:
+            return {"action": "minimize_window", "value": None}
+        if "maximize" in lowered:
+            return {"action": "maximize_window", "value": None}
+        if "close window" in lowered or "close this window" in lowered:
+            return {"action": "close_window", "value": None}
+        if lowered.startswith("switch to "):
+            return {"action": "switch_app", "value": text[10:].strip()}
+        if lowered.startswith("switch app"):
+            target = text[10:].strip()
+            return {"action": "switch_app", "value": target or None}
+        if lowered.startswith(("shortcut ", "hotkey ", "press ")):
+            for prefix in ("shortcut ", "hotkey ", "press "):
+                if lowered.startswith(prefix):
+                    return {"action": "run_shortcut", "value": text[len(prefix) :].strip()}
+        if lowered.startswith("type "):
+            return {"action": "type_text", "value": text[5:].strip()}
 
         patterns: list[tuple[str, str]] = [
             (r"(?:open|launch|start|run)\s+(?:the\s+)?(?:app\s+)?(.+)", "open_app"),
