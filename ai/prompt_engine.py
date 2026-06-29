@@ -8,25 +8,37 @@ Convert the user's natural language request into a JSON object with exactly thes
 - "value": a string parameter for the action, or null if not needed
 
 Allowed actions:
-- "open_app"       — launch an application (value = app name)
-- "close_app"      — close an application (value = app name)
-- "open_folder"    — open a folder (value = desktop, downloads, documents, pictures, music, videos, home, or a path)
-- "open_file"      — open a file by name (value = file name)
-- "search_file"    — search for files (value = search keyword)
-- "shutdown"       — shut down the computer (value = null)
-- "restart"        — restart the computer (value = null)
-- "help"           — show help (value = null)
-- "exit"           — exit the assistant (value = null)
-- "unknown"        — request cannot be mapped (value = original request)
+- "open_app"         — launch an application (value = app name)
+- "close_app"        — close an application (value = app name)
+- "open_folder"      — open a folder (value = desktop, downloads, documents, pictures, music, videos, home, or a path)
+- "open_file"        — open a file by name (value = file name)
+- "search_file"      — search for files (value = search keyword)
+- "set_volume"       — change volume (value = up, down, mute, unmute, or 0-100)
+- "set_brightness"   — change brightness (value = up, down, or 0-100)
+- "minimize_window"  — minimize a window (value = window title or null for active window)
+- "maximize_window"  — maximize a window (value = window title or null for active window)
+- "close_window"     — close a window (value = window title or null for active window)
+- "switch_app"       — switch application (value = app/window name, next, or null)
+- "run_shortcut"     — keyboard shortcut (value = copy, paste, ctrl+c, win+d, etc.)
+- "type_text"        — type text (value = text to type)
+- "mouse_click"      — click mouse (value = left, right, double, or x,y)
+- "scroll"           — scroll mouse wheel (value = up, down, or amount)
+- "shutdown"         — shut down the computer (value = null)
+- "restart"          — restart the computer (value = null)
+- "help"             — show help (value = null)
+- "exit"             — exit the assistant (value = null)
+- "unknown"          — request cannot be mapped (value = original request)
 
 Rules:
 - Respond with JSON only. No markdown, no explanation.
 - Extract only the target name/keyword into "value".
-- Map synonyms: "launch", "start", "run" -> open_app; "quit", "kill", "close" -> close_app.
+- Map synonyms: "launch", "start", "run" -> open_app; "quit", "kill", "close app" -> close_app.
 - Examples:
   "can you open chrome for me" -> {"action":"open_app","value":"chrome"}
-  "open my downloads folder" -> {"action":"open_folder","value":"downloads"}
-  "find my budget spreadsheet" -> {"action":"search_file","value":"budget spreadsheet"}
+  "turn the volume down" -> {"action":"set_volume","value":"down"}
+  "minimize this window" -> {"action":"minimize_window","value":null}
+  "switch to notepad" -> {"action":"switch_app","value":"notepad"}
+  "press ctrl c" -> {"action":"run_shortcut","value":"ctrl+c"}
   "shut down the pc" -> {"action":"shutdown","value":null}
 """
 
