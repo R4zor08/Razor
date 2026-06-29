@@ -1,66 +1,20 @@
 """Razor AI — entry point."""
 
 import argparse
-import json
 import sys
-import time
 
 import config
-from core.command_router import CommandRouter
+from core.assistant import Assistant
 from system.executor import Executor
 from utils.logger import get_logger
+from utils.startup import install_startup, uninstall_startup
 
 logger = get_logger(__name__)
 
-_tts_instance = None
-
-
-def get_tts():
-    """Return a configured TTS instance, or None if unavailable."""
-    global _tts_instance
-    if not config.TTS_ENABLED:
-        return None
-    if _tts_instance is None:
-        from voice.text_to_speech import TextToSpeech
-
-        tts = TextToSpeech()
-        if not tts.is_configured():
-            logger.warning("TTS is enabled but not configured.")
-            return None
-        _tts_instance = tts
-    return _tts_instance
-
-
-def speak(text: str, *, personality: bool = True) -> None:
-    """Speak text aloud with optional Australian personality."""
-    from voice.text_to_speech import TTSError
-    from utils.personality import format_spoken_response, format_wake_response
-
-    tts = get_tts()
-    if not tts:
-        return
-
-    spoken = format_spoken_response(text) if personality else format_wake_response(text)
-    try:
-        tts.speak(spoken)
-    except TTSError as exc:
-        logger.warning("TTS failed: %s", exc)
-
-
-def process_command(text: str, *, use_ai: bool = True, show_intent: bool = True) -> str:
-    """Parse and execute a command using AI or deterministic parsing."""
-    if use_ai and config.AI_ENABLED:
-        router = CommandRouter()
-        intent = router.intent_engine.parse(text)
-        if show_intent:
-            print(f"Intent: {json.dumps(intent)}")
-        return router.route(intent)
-
-    return Executor().execute(text)
-
 
 def run_cli(*, use_ai: bool = True) -> None:
-    """Interactive CLI for deterministic command execution."""
+    """Interactive CLI for text commands."""
+    assistant = Assistant(use_ai=use_ai, use_tts=False)
     mode = "AI" if use_ai and config.AI_ENABLED else "CLI"
     print(f"{config.APP_NAME} v{config.APP_VERSION} — {mode} mode")
     print("Type a command or 'help' for available commands. Type 'exit' to quit.\n")
@@ -75,7 +29,7 @@ def run_cli(*, use_ai: bool = True) -> None:
         if not command:
             continue
 
-        result = process_command(command, use_ai=use_ai)
+        result = assistant.handle_input(command, source="cli")
         if result == "__EXIT__":
             print("Goodbye.")
             break
@@ -84,244 +38,117 @@ def run_cli(*, use_ai: bool = True) -> None:
         print()
 
 
-def listen_for_single_command(stt_engine: str | None = None) -> str | None:
-    """Listen for one spoken command and return transcribed text."""
-    from voice.listener import Listener
-    from voice.speech_to_text import SpeechToText
-
-    import numpy as np
-
-    stt = SpeechToText(engine=stt_engine)
-    stt.reset()
-    listener = Listener()
-
-    result: dict[str, str | None] = {"text": None}
-    partial_line = ""
-    listening_indicator = False
-
-    def on_audio(chunk: bytes) -> None:
-        nonlocal partial_line, listening_indicator
-        if result["text"] is not None:
-            return
-
-        final_text, partial_text = stt.process_chunk(chunk)
-
-        if stt.is_streaming and partial_text:
-            partial_line = partial_text
-            print(f"\r  ... {partial_text}   ", end="", flush=True)
-
-        if not stt.is_streaming and not listening_indicator:
-            samples = np.frombuffer(chunk, dtype=np.int16).astype(np.float32)
-            rms = float(np.sqrt(np.mean(samples * samples))) if samples.size else 0.0
-            if rms >= config.SPEECH_ENERGY_THRESHOLD:
-                listening_indicator = True
-                print("\r  [listening...]   ", end="", flush=True)
-
-        if stt.consume_utterance_complete() and listening_indicator and not final_text:
-            print("\r" + " " * 24 + "\r", end="", flush=True)
-            listening_indicator = False
-
-        if final_text:
-            if partial_line:
-                print("\r" + " " * (len(partial_line) + 8) + "\r", end="")
-            elif listening_indicator:
-                print("\r" + " " * 24 + "\r", end="")
-            result["text"] = final_text
-            stt.reset()
-
-    listener.listen_continuous(on_audio)
-
-    try:
-        while result["text"] is None:
-            time.sleep(0.05)
-    finally:
-        remaining = stt.flush()
-        listener.stop()
-        if result["text"] is None and remaining:
-            result["text"] = remaining
-
-    return result["text"]
-
-
-def run_wake_assistant(
-    stt_engine: str | None = None,
-    *,
-    use_ai: bool = True,
-    use_tts: bool = True,
-) -> None:
-    """Wake word loop: wait for 'Hey Razor', respond, then listen for a command."""
-    from voice.wake_word import WakeWord
-
-    engine = stt_engine or config.STT_ENGINE
-    wake = WakeWord()
-
-    print(f"{config.APP_NAME} v{config.APP_VERSION} — Wake word mode")
-    print(f"Say '{config.WAKE_PHRASE.title()}' to activate.")
-    if use_ai and config.AI_ENABLED:
-        print("Natural language commands enabled via Ollama.")
-    if use_tts and config.TTS_ENABLED:
-        print("Australian voice output enabled via ElevenLabs.")
-    print("Press Ctrl+C to stop.\n")
-
-    try:
-        while True:
-            print(f"[idle] Listening for '{config.WAKE_PHRASE}'...")
-            trailing_command = wake.wait_for_activation()
-
-            print(f"Razor: {config.WAKE_RESPONSE}")
-            if use_tts:
-                speak(config.WAKE_RESPONSE, personality=False)
-
-            command = trailing_command or listen_for_single_command(stt_engine=engine)
-            if command:
-                print(f">> {command}")
-                result = process_command(command, use_ai=use_ai)
-                if result and result != "__EXIT__":
-                    print(result)
-                    if use_tts:
-                        speak(result)
-            else:
-                print("(no command heard)")
-                if use_tts:
-                    speak("I didn't catch that mate.")
-
-            print()
-    except KeyboardInterrupt:
-        print("\nGoodbye.")
-        if use_tts:
-            speak("Catch ya later mate.", personality=False)
-    finally:
-        wake.stop()
-
-
-def run_voice(
-    stt_engine: str | None = None,
-    *,
-    direct: bool = False,
-    use_ai: bool = True,
-    use_tts: bool = True,
-) -> None:
-    """Voice input — wake word mode by default, or direct always-listening mode."""
-    if not direct:
-        run_wake_assistant(stt_engine=stt_engine, use_ai=use_ai, use_tts=use_tts)
-        return
-
-    from voice.listener import Listener
-    from voice.speech_to_text import SpeechToText
-
-    import numpy as np
-
-    try:
-        stt = SpeechToText(engine=stt_engine)
-        stt.reset()
-    except (FileNotFoundError, ValueError) as exc:
-        print(exc, file=sys.stderr)
-        sys.exit(1)
-
-    print(f"{config.APP_NAME} v{config.APP_VERSION} — Voice mode ({stt.engine})")
-    if stt.is_streaming:
-        print("Speak into your microphone. Partial results appear while you talk.")
-    else:
-        print("Speak a command, then pause. Whisper transcribes after a short silence.")
-    print("Press Ctrl+C to stop.\n")
-
-    listener = Listener()
-    partial_line = ""
-    listening_indicator = False
-
-    def on_audio(chunk: bytes) -> None:
-        nonlocal partial_line, listening_indicator
-        final_text, partial_text = stt.process_chunk(chunk)
-
-        if stt.is_streaming and partial_text:
-            partial_line = partial_text
-            print(f"\r  ... {partial_text}   ", end="", flush=True)
-
-        if not stt.is_streaming and not listening_indicator:
-            samples = np.frombuffer(chunk, dtype=np.int16).astype(np.float32)
-            rms = float(np.sqrt(np.mean(samples * samples))) if samples.size else 0.0
-            if rms >= config.SPEECH_ENERGY_THRESHOLD:
-                listening_indicator = True
-                print("\r  [listening...]   ", end="", flush=True)
-
-        if stt.consume_utterance_complete() and listening_indicator and not final_text:
-            print("\r" + " " * 24 + "\r", end="", flush=True)
-            listening_indicator = False
-
-        if final_text:
-            if partial_line:
-                print("\r" + " " * (len(partial_line) + 8) + "\r", end="")
-                partial_line = ""
-            elif listening_indicator:
-                print("\r" + " " * 24 + "\r", end="")
-                listening_indicator = False
-            print(f">> {final_text}")
-            result = process_command(final_text, use_ai=use_ai)
-            if result and result != "__EXIT__":
-                print(result)
-                if use_tts:
-                    speak(result)
-            stt.reset()
-
-    try:
-        listener.listen_continuous(on_audio)
-        while True:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        print("\nStopping...")
-    finally:
-        remaining = stt.flush()
-        if remaining:
-            print(f">> {remaining}")
-        listener.stop()
-        print("Goodbye.")
-
-
 def main() -> None:
-    """Bootstrap and run the assistant."""
+    """Bootstrap and run Razor."""
     parser = argparse.ArgumentParser(description=f"{config.APP_NAME} assistant")
     parser.add_argument(
-        "--voice",
+        "--cli",
         action="store_true",
-        help="Run in voice mode with wake word activation",
+        help="Run text CLI instead of full voice assistant",
     )
     parser.add_argument(
         "--voice-direct",
         action="store_true",
-        help="Run in always-listening voice mode (no wake word)",
-    )
-    parser.add_argument(
-        "--cli",
-        action="store_true",
-        help="Run in CLI text input mode (default)",
+        help="Always-listening voice mode without wake word (legacy)",
     )
     parser.add_argument(
         "--stt",
         choices=["whisper", "vosk"],
         default=None,
-        help=f"Speech-to-text engine for commands (default: {config.STT_ENGINE})",
+        help=f"Speech-to-text engine (default: {config.STT_ENGINE})",
     )
     parser.add_argument(
         "--no-ai",
         action="store_true",
-        help="Disable Ollama and use deterministic command parsing only",
+        help="Disable Ollama reasoning",
     )
     parser.add_argument(
         "--no-tts",
         action="store_true",
-        help="Disable ElevenLabs voice output",
+        help="Disable voice output",
+    )
+    parser.add_argument(
+        "--install-startup",
+        action="store_true",
+        help="Install Razor to run automatically on Windows login",
+    )
+    parser.add_argument(
+        "--uninstall-startup",
+        action="store_true",
+        help="Remove Razor from Windows startup",
     )
     args = parser.parse_args()
+
+    if args.install_startup:
+        print(install_startup())
+        return
+
+    if args.uninstall_startup:
+        print(uninstall_startup())
+        return
 
     use_ai = not args.no_ai
     use_tts = not args.no_tts
 
-    logger.info("Starting %s v%s", config.APP_NAME, config.APP_VERSION)
-
-    if args.voice or args.voice_direct:
-        run_voice(stt_engine=args.stt, direct=args.voice_direct, use_ai=use_ai, use_tts=use_tts)
-    else:
+    if args.cli:
         run_cli(use_ai=use_ai)
+        return
+
+    if args.voice_direct:
+        _run_voice_direct(stt_engine=args.stt, use_ai=use_ai, use_tts=use_tts)
+        return
+
+    assistant = Assistant(use_ai=use_ai, use_tts=use_tts, stt_engine=args.stt)
+    assistant.run()
+
+
+def _run_voice_direct(*, stt_engine: str | None, use_ai: bool, use_tts: bool) -> None:
+    """Legacy direct-listening mode without wake word."""
+    from voice.listener import Listener
+    from voice.speech_to_text import SpeechToText
+    from voice.audio_queue import BackgroundListener
+    import time
+    import numpy as np
+
+    assistant = Assistant(use_ai=use_ai, use_tts=use_tts, stt_engine=stt_engine)
+    stt = SpeechToText(engine=stt_engine)
+    stt.reset()
+    background = BackgroundListener()
+
+    print(f"{config.APP_NAME} v{config.APP_VERSION} — Direct voice mode")
+    print("Press Ctrl+C to stop.\n")
+
+    partial_line = ""
+    listening_indicator = False
+
+    def on_audio(chunk: bytes) -> None:
+        nonlocal partial_line, listening_indicator
+        final_text, partial_text = stt.process_chunk(chunk)
+        if stt.is_streaming and partial_text:
+            partial_line = partial_text
+            print(f"\r  ... {partial_text}   ", end="", flush=True)
+        if not stt.is_streaming and not listening_indicator:
+            samples = np.frombuffer(chunk, dtype=np.int16).astype(np.float32)
+            rms = float(np.sqrt(np.mean(samples * samples))) if samples.size else 0.0
+            if rms >= config.SPEECH_ENERGY_THRESHOLD:
+                listening_indicator = True
+                print("\r  [listening...]   ", end="", flush=True)
+        if final_text:
+            print(f"\n>> {final_text}")
+            result = assistant.handle_input(final_text, source="voice")
+            if result and result != "__EXIT__":
+                print(result)
+                assistant._speak(result)
+            stt.reset()
+
+    try:
+        background.start(on_audio)
+        while True:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nGoodbye.")
+    finally:
+        background.stop()
 
 
 if __name__ == "__main__":
