@@ -71,6 +71,17 @@ ELEVENLABS_STYLE = 0.35
 ASSETS_DIR = "assets"
 AUDIO_DIR = "assets/audio"
 LOGS_DIR = "assets/logs"
+APP_LOG_FILE = "assets/logs/razor.log"
+ACTION_LOG_FILE = "assets/logs/actions.log"
+
+# Logging & safety
+FILE_LOG_ENABLED = True
+ACTION_LOG_ENABLED = True
+SAFE_MODE = True
+SAFE_MODE_STRICT = False
+
+# Startup
+STARTUP_FOLDER_NAME = "Razor AI"
 
 # File search
 FILE_SEARCH_MAX_RESULTS = 25
