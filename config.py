@@ -22,7 +22,7 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 APP_NAME = "Razor AI"
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.3.0"
 
 # Voice
 WAKE_PHRASE = "hey razor"
@@ -30,10 +30,10 @@ WAKE_RESPONSE = "Yes mate?"
 WAKE_WORD = "razor"
 SAMPLE_RATE = 16000
 VOICE_BLOCK_MS = 750
-MIC_DEVICE = 1  # None = system default microphone
+MIC_DEVICE = None  # None = system default; run `python main.py --list-mics` to list devices
 
 # Speech-to-text engine: "whisper" or "vosk"
-STT_ENGINE = "whisper"
+STT_ENGINE = "vosk"
 
 # Vosk (streaming, lightweight)
 VOSK_MODEL_PATH = "assets/models/vosk-model-small-en-us-0.15"
@@ -51,8 +51,10 @@ MIN_SPEECH_MS = 300  # ignore utterances shorter than this
 # AI
 OLLAMA_HOST = "http://localhost:11434"
 OLLAMA_MODEL = "llama3.2:3b"
+OLLAMA_INTENT_MODEL = "llama3.2:1b"  # faster model for intent parsing; empty = use OLLAMA_MODEL
 OLLAMA_TIMEOUT = 60
 AI_ENABLED = True
+CHAT_FALLBACK = True  # answer general questions when intent is unknown
 
 # Text-to-speech
 TTS_ENABLED = True
@@ -80,9 +82,39 @@ ACTION_LOG_ENABLED = True
 SAFE_MODE = True
 SAFE_MODE_STRICT = False
 
-# Startup
+# Startup & always-on
 STARTUP_FOLDER_NAME = "Razor AI"
+TRAY_ENABLED = True
+TRAY_ON_START = True  # minimize to tray when launched with --tray
+HOTKEY_ENABLED = True
+HOTKEY = "<ctrl>+<shift>+r"
+PROCESSING_FEEDBACK = True
+PROCESSING_SPEAK = False  # speak "One sec mate" while Ollama thinks
+
+# Activation UI
+UI_ENABLED = True
+UI_AUTO_HIDE_SECONDS = 8
+UI_POSITION = "bottom"  # bottom | top
+UI_IDLE_VISIBLE = True  # show compact "Say Hey Razor" bar while idle
+UI_IDLE_COMPACT = True  # collapse to idle pill instead of hiding completely
+
+# Wake — UI appears instantly on detection (before beep/TTS)
+WAKE_UI_FIRST = True
+WAKE_DEBUG = False  # log partial STT when razor-like words heard
+WAKE_BEEP = True
+WAKE_SPEAK = True  # speak "Yes mate?" after UI appears (async)
+
+# Double-clap activation
+CLAP_ENABLED = True
+CLAP_THRESHOLD = 2500  # RMS energy for a clap (tune for your mic)
+CLAP_MIN_GAP_MS = 120
+CLAP_MAX_GAP_MS = 700
+CLAP_COOLDOWN_MS = 2500
+
+# Single instance (prevent duplicate tray icons)
+SINGLE_INSTANCE = True
 
 # File search
 FILE_SEARCH_MAX_RESULTS = 25
-FILE_SEARCH_DEPTH = 6
+FILE_SEARCH_DEPTH = 8
+FILE_SEARCH_WIDE = True  # search entire user profile instead of Desktop/Downloads only
