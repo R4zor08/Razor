@@ -14,7 +14,7 @@ class BackgroundListener:
 
     def __init__(self, listener: Listener | None = None) -> None:
         self.listener = listener or Listener()
-        self._queue: queue.Queue[bytes] = queue.Queue(maxsize=50)
+        self._queue: queue.Queue[bytes] = queue.Queue(maxsize=100)
         self._worker: threading.Thread | None = None
         self._stop = threading.Event()
 
