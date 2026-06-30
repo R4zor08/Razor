@@ -31,10 +31,10 @@ class OllamaClient:
         self.model = model or config.OLLAMA_MODEL
         self.timeout = timeout or config.OLLAMA_TIMEOUT
 
-    def generate(self, prompt: str, *, json_mode: bool = True) -> str:
+    def generate(self, prompt: str, *, json_mode: bool = True, model: str | None = None) -> str:
         """Send a prompt and return the model response text."""
         payload: dict[str, Any] = {
-            "model": self.model,
+            "model": model or self.model,
             "prompt": prompt,
             "stream": False,
         }
@@ -47,9 +47,9 @@ class OllamaClient:
             raise OllamaError("Ollama returned an empty response.")
         return text
 
-    def generate_json(self, prompt: str) -> dict[str, Any]:
+    def generate_json(self, prompt: str, *, model: str | None = None) -> dict[str, Any]:
         """Send a prompt and return a parsed JSON object."""
-        raw = self.generate(prompt, json_mode=True)
+        raw = self.generate(prompt, json_mode=True, model=model)
         return self.parse_json_response(raw)
 
     def is_available(self) -> bool:
@@ -97,6 +97,19 @@ class OllamaClient:
                 f"Cannot connect to Ollama at {self.host}. Is Ollama running?"
             ) from exc
 
+    def chat(self, prompt: str) -> str:
+        """Return a conversational response (non-JSON)."""
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+        }
+        response = self._post("/api/generate", payload)
+        text = response.get("response", "").strip()
+        if not text:
+            raise OllamaError("Ollama returned an empty response.")
+        return text
+
     def _get(self, path: str) -> dict[str, Any]:
         url = f"{self.host}{path}"
         request = urllib.request.Request(url, method="GET")
@@ -107,3 +120,14 @@ class OllamaClient:
             raise OllamaError(
                 f"Cannot connect to Ollama at {self.host}. Is Ollama running?"
             ) from exc
+
+
+# Shared client instance for lower latency
+_client_instance: OllamaClient | None = None
+
+
+def get_ollama_client() -> OllamaClient:
+    global _client_instance
+    if _client_instance is None:
+        _client_instance = OllamaClient()
+    return _client_instance
