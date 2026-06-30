@@ -109,6 +109,69 @@ class FileManager:
             lines.append(f"  (showing first {config.FILE_SEARCH_MAX_RESULTS} results)")
         return "\n".join(lines)
 
+    def create_folder(self, target: str) -> str:
+        """Create a folder on desktop, in documents, or at a path."""
+        path = self._resolve_create_path(target, expect_file=False)
+        if path is None:
+            return f"Could not resolve folder location for '{target}'."
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            return f"Created folder {path}."
+        except OSError as exc:
+            return f"Failed to create folder: {exc}"
+
+    def create_file(self, target: str, content: str = "") -> str:
+        """Create a file with optional text content."""
+        path = self._resolve_create_path(target, expect_file=True)
+        if path is None:
+            return f"Could not resolve file location for '{target}'."
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+            return f"Created file {path}."
+        except OSError as exc:
+            return f"Failed to create file: {exc}"
+
+    def _resolve_create_path(self, target: str, *, expect_file: bool) -> Path | None:
+        text = target.strip()
+        if not text:
+            return None
+
+        if "|" in text:
+            text = text.split("|", 1)[0].strip()
+
+        lowered = text.lower()
+        for prefix in ("on desktop ", "on my desktop ", "in documents ", "in downloads "):
+            if lowered.startswith(prefix):
+                location = prefix.strip().split()[0].replace("on", "").replace("in", "").strip()
+                if "desktop" in prefix:
+                    base = self._resolve_folder_path("desktop") or self._home / "Desktop"
+                elif "documents" in prefix:
+                    base = self._resolve_folder_path("documents") or self._home / "Documents"
+                else:
+                    base = self._resolve_folder_path("downloads") or self._home / "Downloads"
+                name = text[len(prefix) :].strip()
+                return base / name
+
+        if lowered.startswith("called "):
+            text = text[7:].strip()
+
+        for location in ("desktop", "documents", "downloads", "home"):
+            token = f"{location}/"
+            if lowered.startswith(token):
+                base = self._resolve_folder_path(location) or self._home
+                remainder = text[len(token) :]
+                return base / remainder
+
+        if "/" in text or "\\" in text:
+            return Path(text)
+
+        base = self._resolve_folder_path("desktop") or self._home
+        path = base / text
+        if expect_file and not path.suffix:
+            path = path.with_suffix(".txt")
+        return path
+
     def _resolve_folder_path(self, query: str) -> Path | None:
         if query in SPECIAL_FOLDERS:
             if query == "home":
@@ -158,7 +221,10 @@ class FileManager:
             return None
 
     def _default_search_roots(self) -> list[Path]:
-        names = ("desktop", "downloads", "documents")
+        if config.FILE_SEARCH_WIDE:
+            return [self._home]
+
+        names = ("desktop", "downloads", "documents", "pictures", "videos", "music")
         roots: list[Path] = []
         for name in names:
             path = self._resolve_folder_path(name)
@@ -191,6 +257,9 @@ class FileManager:
                 if entry.is_file():
                     yield entry
                 elif entry.is_dir() and not entry.name.startswith("."):
+                    skip_dirs = {".git", "node_modules", "__pycache__", "AppData", "venv", ".venv"}
+                    if entry.name in skip_dirs and config.FILE_SEARCH_WIDE:
+                        continue
                     stack.append((entry, depth + 1))
 
     def _open_path(self, path: Path) -> str:

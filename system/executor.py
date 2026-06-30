@@ -8,6 +8,7 @@ from system.app_launcher import AppLauncher
 from system.automation import Automation
 from system.file_manager import FileManager
 from system.system_control import SystemControl
+from system.web_browser import WebBrowser
 from system.window_controller import WindowController
 
 
@@ -20,7 +21,11 @@ Available commands:
   close app <name>       Close an application
   open folder <name>     Open Desktop, Downloads, Documents, or a path
   open file <name>       Find and open a file by name
-  search file <keyword>  Search for files by keyword
+  search file <keyword>  Search for files by keyword (wide search when enabled)
+  search web <query>     Google search in default browser
+  open url <site|url>    Open a website (youtube, gmail, or full URL)
+  create folder <path>   Create a folder (e.g. desktop/RazorTest)
+  create file <path>     Create a text file (optional content after |)
   volume <up|down|mute|50>   Control system volume
   brightness <up|down|50>    Control display brightness
   minimize [window]      Minimize active or named window
@@ -47,6 +52,7 @@ Available commands:
         self.system_control = SystemControl()
         self.window_controller = WindowController()
         self.automation = Automation()
+        self.web_browser = WebBrowser()
 
     def execute(self, command: str) -> str:
         """Parse and run a user command."""
@@ -123,6 +129,30 @@ Available commands:
         )
         if match and not lowered.startswith("close window"):
             return self.app_launcher.close_app(match.group(1))
+
+        match = re.match(
+            r"^(?:search web|google|web search)\s+(.+)$",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            return self.web_browser.search_web(match.group(1))
+
+        match = re.match(r"^(?:open url|open website|browse)\s+(.+)$", text, re.IGNORECASE)
+        if match:
+            return self.web_browser.open_url(match.group(1))
+
+        match = re.match(r"^create folder\s+(.+)$", text, re.IGNORECASE)
+        if match:
+            return self.file_manager.create_folder(match.group(1))
+
+        match = re.match(r"^create file\s+(.+)$", text, re.IGNORECASE)
+        if match:
+            raw = match.group(1)
+            if "|" in raw:
+                path_part, content = raw.split("|", 1)
+                return self.file_manager.create_file(path_part.strip(), content.strip())
+            return self.file_manager.create_file(raw)
 
         match = re.match(
             r"^(?:search file|search files|find file|find files|search for file|find)\s+(.+)$",
@@ -213,6 +243,21 @@ Available commands:
         if action == "search_file" and value:
             results = self.file_manager.search_files(value)
             return self.file_manager.format_search_results(value, results)
+
+        if action == "search_web" and value:
+            return self.web_browser.search_web(value)
+
+        if action == "open_url" and value:
+            return self.web_browser.open_url(value)
+
+        if action == "create_folder" and value:
+            return self.file_manager.create_folder(value)
+
+        if action == "create_file" and value:
+            if "|" in value:
+                path_part, content = value.split("|", 1)
+                return self.file_manager.create_file(path_part.strip(), content.strip())
+            return self.file_manager.create_file(value)
 
         if action == "unknown":
             original = value or "that request"
