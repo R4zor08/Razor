@@ -21,27 +21,62 @@ def startup_folder() -> Path:
     return Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
 
 
-def install_startup() -> str:
-    """Create a Startup folder shortcut that launches Razor on login."""
-    root = project_root()
-    launcher = root / "scripts" / "start_razor.bat"
-    if not launcher.is_file():
-        raise FileNotFoundError(f"Launcher not found: {launcher}")
+def _pythonw_path() -> Path:
+    exe = Path(sys.executable)
+    pythonw = exe.with_name("pythonw.exe")
+    return pythonw if pythonw.is_file() else exe
 
-    shortcut_path = startup_folder() / f"{config.STARTUP_FOLDER_NAME}.bat"
-    target_cmd = f'"{launcher}"'
-    shortcut_path.write_text(
-        f'@echo off\r\nstart "" {target_cmd}\r\n',
+
+def _write_launcher_scripts(root: Path) -> Path:
+    scripts = root / "scripts"
+    scripts.mkdir(parents=True, exist_ok=True)
+
+    pythonw = _pythonw_path()
+    main_py = root / "main.py"
+
+    bat_path = scripts / "start_razor.bat"
+    bat_path.write_text(
+        f'@echo off\r\ncd /d "{root}"\r\n"{pythonw}" "{main_py}" --tray\r\n',
         encoding="utf-8",
     )
-    return f"Installed startup launcher at {shortcut_path}"
+
+    vbs_path = scripts / "start_razor.vbs"
+    vbs_path.write_text(
+        "\r\n".join(
+            [
+                'Set shell = CreateObject("WScript.Shell")',
+                f'shell.CurrentDirectory = "{root}"',
+                f'shell.Run """{pythonw}"" ""{main_py}"" --tray", 0, False',
+            ]
+        )
+        + "\r\n",
+        encoding="utf-8",
+    )
+    return vbs_path
+
+
+def install_startup() -> str:
+    """Create a Startup folder entry that launches Razor silently in tray mode."""
+    root = project_root()
+    vbs_path = _write_launcher_scripts(root)
+
+    startup_vbs = startup_folder() / f"{config.STARTUP_FOLDER_NAME}.vbs"
+    startup_vbs.write_text(
+        f'CreateObject("WScript.Shell").Run """{vbs_path}""", 0, False\r\n',
+        encoding="utf-8",
+    )
+    return f"Installed silent startup launcher at {startup_vbs}"
 
 
 def uninstall_startup() -> str:
-    shortcut_path = startup_folder() / f"{config.STARTUP_FOLDER_NAME}.bat"
-    if shortcut_path.exists():
-        shortcut_path.unlink()
-        return f"Removed startup launcher from {shortcut_path}"
+    removed: list[str] = []
+    for name in (f"{config.STARTUP_FOLDER_NAME}.vbs", f"{config.STARTUP_FOLDER_NAME}.bat"):
+        path = startup_folder() / name
+        if path.exists():
+            path.unlink()
+            removed.append(str(path))
+    if removed:
+        return "Removed startup launcher(s):\n  " + "\n  ".join(removed)
     return "Startup launcher was not installed."
 
 
