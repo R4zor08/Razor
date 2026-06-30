@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ai.ollama_client import OllamaClient, OllamaError
+import config
+from ai.ollama_client import OllamaError, get_ollama_client
 from ai.prompt_engine import PromptEngine
 from utils.logger import get_logger
 
@@ -18,6 +19,10 @@ VALID_ACTIONS = frozenset(
         "open_folder",
         "open_file",
         "search_file",
+        "search_web",
+        "open_url",
+        "create_folder",
+        "create_file",
         "set_volume",
         "set_brightness",
         "minimize_window",
@@ -28,6 +33,7 @@ VALID_ACTIONS = frozenset(
         "type_text",
         "mouse_click",
         "scroll",
+        "chat",
         "shutdown",
         "restart",
         "help",
@@ -54,33 +60,30 @@ NULL_VALUE_ACTIONS = frozenset(
 class IntentEngine:
     """Detects user intent from input text via the local Ollama LLM."""
 
-    def __init__(
-        self,
-        client: OllamaClient | None = None,
-        prompt_engine: PromptEngine | None = None,
-    ) -> None:
-        self.client = client or OllamaClient()
+    def __init__(self, prompt_engine: PromptEngine | None = None) -> None:
+        self.client = get_ollama_client()
         self.prompt_engine = prompt_engine or PromptEngine()
 
     def parse(self, text: str) -> dict[str, Any]:
-        """
-        Convert natural language into a structured command dict.
-
-        Returns:
-            {"action": str, "value": str | None}
-        """
         cleaned = text.strip()
         if not cleaned:
             return {"action": "unknown", "value": None}
+
+        fallback = self._fallback_parse(cleaned)
+        if fallback["action"] != "unknown":
+            return fallback
 
         prompt = self.prompt_engine.build_intent_prompt(cleaned)
         logger.info("Parsing intent for: %s", cleaned)
 
         try:
-            raw = self.client.generate_json(prompt)
+            raw = self.client.generate_json(
+                prompt,
+                model=config.OLLAMA_INTENT_MODEL or None,
+            )
         except OllamaError as exc:
             logger.warning("Ollama error (%s), using rule-based intent fallback", exc)
-            return self._fallback_parse(cleaned)
+            return fallback if fallback["action"] != "unknown" else self._fallback_parse(cleaned)
 
         return self._validate_intent(raw, cleaned)
 
@@ -89,21 +92,24 @@ class IntentEngine:
         value = raw.get("value")
 
         if action not in VALID_ACTIONS:
-            logger.warning("Invalid action '%s' from model, marking unknown", action)
-            return {"action": "unknown", "value": original_text}
+            return self._fallback_parse(original_text)
 
         if action in NULL_VALUE_ACTIONS:
             return {"action": action, "value": None}
 
+        if action == "chat":
+            return {"action": "chat", "value": str(value or original_text).strip()}
+
         if value is None or str(value).strip() == "":
             if action in {"set_volume", "set_brightness", "scroll", "run_shortcut", "type_text"}:
-                return {"action": "unknown", "value": original_text}
-            return {"action": "unknown", "value": original_text}
+                return self._fallback_parse(original_text)
+            if action in NULL_VALUE_ACTIONS:
+                return {"action": action, "value": None}
+            return self._fallback_parse(original_text)
 
         return {"action": action, "value": str(value).strip()}
 
     def _fallback_parse(self, text: str) -> dict[str, Any]:
-        """Simple keyword fallback when Ollama is unavailable."""
         lowered = text.lower()
 
         if lowered in {"help", "?"}:
@@ -114,50 +120,77 @@ class IntentEngine:
             return {"action": "shutdown", "value": None}
         if any(p in lowered for p in ("restart", "reboot")):
             return {"action": "restart", "value": None}
-        if any(p in lowered for p in ("volume up", "turn up the volume", "louder")):
+
+        web_patterns = [
+            (r"(?:search google for|google search|search the web for|search web for|google)\s+(.+)", "search_web"),
+            (r"(?:search for|find)\s+(.+)\s+online", "search_web"),
+        ]
+        for pattern, action in web_patterns:
+            match = re.search(pattern, lowered)
+            if match:
+                return {"action": action, "value": match.group(1).strip()}
+
+        folder_patterns = [
+            (r"create folder(?: called)?\s+(.+?)\s+on\s+desktop", "create_folder", "desktop/"),
+            (r"make folder(?: called)?\s+(.+?)\s+on\s+desktop", "create_folder", "desktop/"),
+            (r"create folder(?: called)?\s+(.+)", "create_folder", "desktop/"),
+            (r"make a folder(?: called)?\s+(.+)", "create_folder", "desktop/"),
+        ]
+        for pattern, action, prefix in folder_patterns:
+            match = re.search(pattern, lowered)
+            if match:
+                name = match.group(1).strip()
+                return {"action": action, "value": f"{prefix}{name}"}
+
+        file_patterns = [
+            (r"create file(?: called)?\s+(.+)", "create_file", "desktop/"),
+            (r"make file(?: called)?\s+(.+)", "create_file", "desktop/"),
+        ]
+        for pattern, action, prefix in file_patterns:
+            match = re.search(pattern, lowered)
+            if match:
+                return {"action": action, "value": f"{prefix}{match.group(1).strip()}"}
+
+        if lowered.startswith(("open http", "open www.")):
+            return {"action": "open_url", "value": text[5:].strip()}
+
+        known_sites = ("youtube", "gmail", "google", "facebook", "github", "netflix", "spotify", "reddit")
+        for site in known_sites:
+            if re.search(rf"\b(open|go to|launch)\s+{site}\b", lowered):
+                return {"action": "open_url", "value": site}
+
+        if any(p in lowered for p in ("volume up", "louder")):
             return {"action": "set_volume", "value": "up"}
-        if any(p in lowered for p in ("volume down", "turn down the volume", "quieter")):
+        if any(p in lowered for p in ("volume down", "quieter")):
             return {"action": "set_volume", "value": "down"}
-        if "mute" in lowered and "volume" in lowered:
+        if "mute" in lowered:
             return {"action": "set_volume", "value": "mute"}
-        if any(p in lowered for p in ("brightness up", "brighter")):
-            return {"action": "set_brightness", "value": "up"}
-        if any(p in lowered for p in ("brightness down", "dimmer")):
-            return {"action": "set_brightness", "value": "down"}
         if "minimize" in lowered:
             return {"action": "minimize_window", "value": None}
         if "maximize" in lowered:
             return {"action": "maximize_window", "value": None}
-        if "close window" in lowered or "close this window" in lowered:
+        if "close window" in lowered:
             return {"action": "close_window", "value": None}
         if lowered.startswith("switch to "):
             return {"action": "switch_app", "value": text[10:].strip()}
-        if lowered.startswith("switch app"):
-            target = text[10:].strip()
-            return {"action": "switch_app", "value": target or None}
-        if lowered.startswith(("shortcut ", "hotkey ", "press ")):
-            for prefix in ("shortcut ", "hotkey ", "press "):
-                if lowered.startswith(prefix):
-                    return {"action": "run_shortcut", "value": text[len(prefix) :].strip()}
-        if lowered.startswith("type "):
-            return {"action": "type_text", "value": text[5:].strip()}
 
         patterns: list[tuple[str, str]] = [
             (r"(?:open|launch|start|run)\s+(?:the\s+)?(?:app\s+)?(.+)", "open_app"),
             (r"(?:close|quit|kill|stop)\s+(?:the\s+)?(?:app\s+)?(.+)", "close_app"),
-            (r"(?:open|show|go to)\s+(?:my\s+)?(.+?)(?:\s+folder)?$", "open_folder"),
-            (r"(?:find|search for|search)\s+(?:my\s+)?(.+)", "search_file"),
+            (r"(?:open|show)\s+(?:my\s+)?(.+?)\s+folder", "open_folder"),
+            (r"(?:find|search)\s+(?:my\s+)?(?:file\s+)?(.+)", "search_file"),
             (r"open file\s+(.+)", "open_file"),
+            (r"(?:open|show|go to)\s+(?:my\s+)?(.+)$", "open_folder"),
         ]
 
         for pattern, action in patterns:
             match = re.search(pattern, lowered)
             if match:
-                value = match.group(1).strip()
-                value = re.sub(r"\b(please|for me|now)\b", "", value).strip()
-                if value:
-                    if action == "open_folder" and value.endswith(" folder"):
-                        value = value[: -len(" folder")]
+                value = re.sub(r"\b(please|for me|now)\b", "", match.group(1)).strip()
+                if value and value not in known_sites:
                     return {"action": action, "value": value}
+
+        if lowered.startswith(("what ", "who ", "why ", "how ", "when ", "where ", "tell me ", "explain ")):
+            return {"action": "chat", "value": text}
 
         return {"action": "unknown", "value": text}
