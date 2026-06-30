@@ -5,9 +5,10 @@ import sys
 
 import config
 from core.assistant import Assistant
-from system.executor import Executor
 from utils.logger import get_logger
+from utils.single_instance import acquire_single_instance, release_single_instance
 from utils.startup import install_startup, uninstall_startup
+from voice.listener import Listener
 
 logger = get_logger(__name__)
 
@@ -38,6 +39,16 @@ def run_cli(*, use_ai: bool = True) -> None:
         print()
 
 
+def _use_tray_by_default(args: argparse.Namespace) -> bool:
+    if args.tray:
+        return True
+    if args.no_tray:
+        return False
+    if sys.executable.lower().endswith("pythonw.exe"):
+        return True
+    return config.TRAY_ON_START and config.TRAY_ENABLED
+
+
 def main() -> None:
     """Bootstrap and run Razor."""
     parser = argparse.ArgumentParser(description=f"{config.APP_NAME} assistant")
@@ -50,6 +61,16 @@ def main() -> None:
         "--voice-direct",
         action="store_true",
         help="Always-listening voice mode without wake word (legacy)",
+    )
+    parser.add_argument(
+        "--tray",
+        action="store_true",
+        help="Run in background with system tray icon (no console needed)",
+    )
+    parser.add_argument(
+        "--no-tray",
+        action="store_true",
+        help="Force console mode even when launched via pythonw",
     )
     parser.add_argument(
         "--stt",
@@ -68,9 +89,14 @@ def main() -> None:
         help="Disable voice output",
     )
     parser.add_argument(
+        "--list-mics",
+        action="store_true",
+        help="List audio input devices and exit",
+    )
+    parser.add_argument(
         "--install-startup",
         action="store_true",
-        help="Install Razor to run automatically on Windows login",
+        help="Install Razor to run automatically on Windows login (silent tray mode)",
     )
     parser.add_argument(
         "--uninstall-startup",
@@ -78,6 +104,12 @@ def main() -> None:
         help="Remove Razor from Windows startup",
     )
     args = parser.parse_args()
+
+    if args.list_mics:
+        print(Listener.list_devices())
+        print(f"\nCurrent MIC_DEVICE in config: {config.MIC_DEVICE!r}")
+        print("Set MIC_DEVICE in config.py to the device index, or None for default.")
+        return
 
     if args.install_startup:
         print(install_startup())
@@ -87,8 +119,12 @@ def main() -> None:
         print(uninstall_startup())
         return
 
+    if config.SINGLE_INSTANCE and not args.cli and not acquire_single_instance():
+        return
+
     use_ai = not args.no_ai
     use_tts = not args.no_tts
+    tray_mode = _use_tray_by_default(args)
 
     if args.cli:
         run_cli(use_ai=use_ai)
@@ -98,17 +134,26 @@ def main() -> None:
         _run_voice_direct(stt_engine=args.stt, use_ai=use_ai, use_tts=use_tts)
         return
 
-    assistant = Assistant(use_ai=use_ai, use_tts=use_tts, stt_engine=args.stt)
-    assistant.run()
+    assistant = Assistant(
+        use_ai=use_ai,
+        use_tts=use_tts,
+        stt_engine=args.stt,
+        tray_mode=tray_mode,
+    )
+    try:
+        assistant.run()
+    finally:
+        release_single_instance()
 
 
 def _run_voice_direct(*, stt_engine: str | None, use_ai: bool, use_tts: bool) -> None:
     """Legacy direct-listening mode without wake word."""
-    from voice.listener import Listener
-    from voice.speech_to_text import SpeechToText
-    from voice.audio_queue import BackgroundListener
     import time
+
     import numpy as np
+
+    from voice.audio_queue import BackgroundListener
+    from voice.speech_to_text import SpeechToText
 
     assistant = Assistant(use_ai=use_ai, use_tts=use_tts, stt_engine=stt_engine)
     stt = SpeechToText(engine=stt_engine)
