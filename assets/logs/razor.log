@@ -356,3 +356,142 @@
 2026-06-30 11:43:59,276 [INFO] core.intent_engine: Parsing intent for: police have been cooler suggests man
 2026-06-30 11:44:15,037 [INFO] voice.listener: Microphone stream stopped.
 2026-06-30 11:44:15,043 [INFO] core.assistant: Razor shutdown complete.
+2026-06-30 13:39:45,239 [INFO] core.brain: Reflex intent: {'action': 'set_volume', 'value': 'up'}
+2026-06-30 13:39:45,240 [INFO] core.brain: Memory follow-up: {'action': 'open_app', 'value': 'calculator'}
+2026-06-30 13:48:21,272 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-30 13:48:22,804 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-06-30 13:48:26,841 [INFO] core.brain: Reflex intent: {'action': 'open_app', 'value': 'notepad'}
+2026-06-30 13:48:36,780 [INFO] core.brain: Reflex intent: {'action': 'set_volume', 'value': 'down'}
+2026-06-30 13:48:44,740 [INFO] core.brain: Reflex intent: {'action': 'set_volume', 'value': 'up'}
+2026-06-30 13:48:49,217 [INFO] core.brain: Reflex intent: {'action': 'set_volume', 'value': 'up'}
+2026-06-30 13:50:34,885 [INFO] core.brain: Reflex intent: {'action': 'open_app', 'value': 'calculator'}
+2026-06-30 13:50:45,323 [INFO] core.brain: Memory follow-up: {'action': 'open_app', 'value': 'calculator'}
+2026-06-30 13:51:28,926 [INFO] core.brain: Reflex intent: {'action': 'exit', 'value': None}
+2026-06-30 13:51:35,150 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-30 13:51:36,013 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-06-30 13:51:46,202 [INFO] core.brain: Reflex intent: {'action': 'open_url', 'value': 'youtube'}
+2026-06-30 13:52:02,020 [INFO] core.brain: Reflex intent: {'action': 'exit', 'value': None}
+2026-06-30 14:23:09,903 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-30 14:23:12,759 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-06-30 14:23:12,759 [INFO] core.assistant: Starting Razor AI v0.4.0
+2026-06-30 14:23:32,549 [INFO] utils.warmup: Models warmed (Ollama llama3.2:1b + STT).
+2026-06-30 14:23:33,660 [INFO] ui.overlay: Activation UI overlay started.
+2026-06-30 14:23:34,524 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:23:34,740 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=True, hub=True)
+2026-06-30 14:23:34,741 [INFO] utils.scheduler: Proactive greeting: Good morning, Ryan. Razor is online.
+2026-06-30 14:23:34,742 [INFO] core.assistant: Starting tray background mode.
+2026-06-30 14:23:34,917 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-06-30 14:23:34,918 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-06-30 14:23:35,215 [INFO] utils.tray: System tray icon started.
+2026-06-30 14:23:35,503 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-30 14:23:39,679 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-30 14:25:09,181 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:25:09,727 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:25:10,055 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:25:16,594 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:25:16,699 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:25:16,710 [INFO] core.brain: Agent planning for: it's my unit
+2026-06-30 14:25:20,679 [INFO] core.brain: Agent intent: {'action': 'get_unit', 'value': 'Ryan'}
+2026-06-30 14:25:28,323 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-30 14:25:38,307 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:25:38,790 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:25:39,062 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:25:45,115 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:25:45,243 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:26:22,324 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:26:22,377 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:26:22,732 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:26:28,194 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-30 14:26:33,773 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:26:33,912 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:26:33,914 [INFO] core.brain: Agent planning for: it be worse
+2026-06-30 14:26:42,114 [WARNING] voice.clap_detector: Clap callback failed: timed out
+2026-06-30 14:26:48,614 [INFO] voice.wake_word: Wake phrase detected in: a razor
+2026-06-30 14:26:48,949 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:26:49,203 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:26:54,261 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:26:54,402 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:26:54,889 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-30 14:26:58,546 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-30 14:26:59,640 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:26:59,941 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:27:00,234 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:27:04,272 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:27:04,420 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:27:04,421 [INFO] core.brain: Agent planning for: yeah how a new job
+2026-06-30 14:27:12,674 [WARNING] voice.clap_detector: Clap callback failed: timed out
+2026-06-30 14:27:36,572 [INFO] voice.wake_word: Wake phrase detected in: about three razors
+2026-06-30 14:27:36,969 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:27:37,234 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:27:42,291 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:27:42,437 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:27:42,440 [INFO] core.brain: Agent planning for: illusion too much
+2026-06-30 14:28:24,520 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:28:25,026 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:28:25,366 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:28:29,908 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:28:30,051 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:28:30,054 [INFO] core.brain: Agent planning for: okay not what happened
+2026-06-30 14:28:38,267 [WARNING] voice.clap_detector: Clap callback failed: timed out
+2026-06-30 14:29:14,706 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:29:15,093 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:29:15,411 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:29:21,471 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:29:21,627 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:29:21,629 [INFO] core.brain: Agent planning for: here
+2026-06-30 14:29:29,815 [WARNING] voice.clap_detector: Clap callback failed: timed out
+2026-06-30 14:29:36,435 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:29:36,665 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:29:36,936 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:29:43,978 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:29:44,050 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:29:44,051 [INFO] core.brain: Agent planning for: or gonna leave and eliminate the last know that
+2026-06-30 14:29:52,229 [WARNING] voice.clap_detector: Clap callback failed: timed out
+2026-06-30 14:37:41,960 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-30 14:37:43,572 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-06-30 14:37:43,573 [INFO] core.assistant: Starting Razor AI v0.4.0
+2026-06-30 14:38:09,163 [INFO] utils.warmup: Models warmed (Ollama llama3.2:1b + STT).
+2026-06-30 14:38:11,842 [INFO] ui.overlay: Activation UI overlay started.
+2026-06-30 14:38:13,123 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:38:13,609 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=True, hub=True)
+2026-06-30 14:38:13,610 [INFO] core.assistant: Starting tray background mode.
+2026-06-30 14:38:14,007 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-06-30 14:38:14,009 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-06-30 14:38:14,382 [INFO] utils.tray: System tray icon started.
+2026-06-30 14:38:14,815 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-06-30 14:38:15,756 [INFO] voice.clap_detector: Double clap detected
+2026-06-30 14:38:16,221 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:38:16,680 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:38:22,798 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:38:23,203 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:38:29,192 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-06-30 14:39:47,779 [INFO] voice.listener: Microphone stream stopped.
+2026-06-30 14:39:47,788 [INFO] core.assistant: Razor shutdown complete.
+2026-06-30 14:48:29,523 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-06-30 14:48:34,058 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-06-30 14:48:34,058 [INFO] core.assistant: Starting Razor AI v0.4.0
+2026-06-30 14:48:57,022 [INFO] utils.warmup: Models warmed (Ollama llama3.2:1b + STT).
+2026-06-30 14:48:58,176 [INFO] ui.overlay: Activation UI overlay started.
+2026-06-30 14:48:59,054 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-06-30 14:48:59,245 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=True, hub=True)
+2026-06-30 14:48:59,245 [INFO] core.assistant: Starting tray background mode.
+2026-06-30 14:48:59,394 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-06-30 14:48:59,394 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-06-30 14:48:59,558 [INFO] utils.tray: System tray icon started.
+2026-06-30 14:48:59,807 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-01 13:58:04,741 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-07-01 13:58:06,273 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-07-01 13:58:06,274 [INFO] core.assistant: Starting Razor AI v0.4.0
+2026-07-01 13:58:29,141 [INFO] utils.warmup: Models warmed (Ollama llama3.2:1b + STT).
+2026-07-01 13:58:31,118 [INFO] ui.overlay: Activation UI overlay started.
+2026-07-01 13:58:32,174 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-07-01 13:58:32,433 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=True, hub=True)
+2026-07-01 13:58:32,435 [INFO] utils.scheduler: Proactive greeting: Good morning, Ryan. Razor is online.
+2026-07-01 13:58:32,436 [INFO] core.assistant: Starting tray background mode.
+2026-07-01 13:58:32,660 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-07-01 13:58:32,661 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-07-01 13:58:33,027 [INFO] utils.tray: System tray icon started.
+2026-07-01 13:58:33,257 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-01 13:58:37,506 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-07-01 13:58:55,184 [INFO] voice.listener: Microphone stream stopped.
+2026-07-01 13:58:55,222 [INFO] core.assistant: Razor shutdown complete.

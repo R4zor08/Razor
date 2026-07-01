@@ -101,3 +101,45 @@
 {"timestamp": "2026-06-30T03:43:34.940763+00:00", "event": "startup", "source": "assistant", "input": null, "intent": null, "result": null, "meta": {"ai": true, "tts": true, "stt": "vosk", "safe_mode": true, "tray": true, "ui": true, "clap": true}}
 {"timestamp": "2026-06-30T03:43:59.273726+00:00", "event": "input_received", "source": "clap", "input": "police have been cooler suggests man", "intent": null, "result": null, "meta": {}}
 {"timestamp": "2026-06-30T03:44:15.043050+00:00", "event": "shutdown", "source": "assistant", "input": null, "intent": null, "result": "stopped", "meta": {}}
+{"timestamp": "2026-06-30T05:48:26.836903+00:00", "event": "input_received", "source": "cli", "input": "open notepad", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:48:26.972608+00:00", "event": "executed", "source": "cli", "input": "open notepad", "intent": {"action": "open_app", "value": "notepad"}, "result": "Opened notepad.exe.", "meta": {}}
+{"timestamp": "2026-06-30T05:48:36.780095+00:00", "event": "input_received", "source": "cli", "input": "volume down", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:48:38.091624+00:00", "event": "executed", "source": "cli", "input": "volume down", "intent": {"action": "set_volume", "value": "down"}, "result": "Volume turned down.", "meta": {}}
+{"timestamp": "2026-06-30T05:48:44.739250+00:00", "event": "input_received", "source": "cli", "input": "volume up", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:48:45.307197+00:00", "event": "executed", "source": "cli", "input": "volume up", "intent": {"action": "set_volume", "value": "up"}, "result": "Volume turned up.", "meta": {}}
+{"timestamp": "2026-06-30T05:48:49.216187+00:00", "event": "input_received", "source": "cli", "input": "volume up", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:48:50.143174+00:00", "event": "executed", "source": "cli", "input": "volume up", "intent": {"action": "set_volume", "value": "up"}, "result": "Volume turned up.", "meta": {}}
+{"timestamp": "2026-06-30T05:49:01.135763+00:00", "event": "input_received", "source": "cli", "input": "what time is it?", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:49:13.084989+00:00", "event": "input_received", "source": "cli", "input": "Remember my name is Ryan", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:49:25.981083+00:00", "event": "input_received", "source": "cli", "input": "What's my name?", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:50:09.191895+00:00", "event": "chat", "source": "cli", "input": "What's my name?", "intent": {"action": "chat", "value": "What's my name?"}, "result": "Your username, Ryan, was last accessed, of course.", "meta": {}}
+{"timestamp": "2026-06-30T05:50:34.879551+00:00", "event": "input_received", "source": "cli", "input": "open calculator", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:50:34.976397+00:00", "event": "executed", "source": "cli", "input": "open calculator", "intent": {"action": "open_app", "value": "calculator"}, "result": "Opened calc.exe.", "meta": {}}
+{"timestamp": "2026-06-30T05:50:45.321784+00:00", "event": "input_received", "source": "cli", "input": "open it again", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:50:45.354257+00:00", "event": "executed", "source": "cli", "input": "open it again", "intent": {"action": "open_app", "value": "calculator"}, "result": "Opened calc.exe.", "meta": {}}
+{"timestamp": "2026-06-30T05:50:55.634249+00:00", "event": "input_received", "source": "cli", "input": "what is Python?", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:51:15.181071+00:00", "event": "chat", "source": "cli", "input": "what is Python?", "intent": {"action": "chat", "value": "what is Python?"}, "result": "Python is a high-level programming language known for its simplicity and versatility, widely used in data analysis, machine learning, and web development. It's a popular choice among developers due to its readability and ease of use.", "meta": {}}
+{"timestamp": "2026-06-30T05:51:28.925041+00:00", "event": "input_received", "source": "cli", "input": "exit", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:51:28.928709+00:00", "event": "executed", "source": "cli", "input": "exit", "intent": {"action": "exit", "value": null}, "result": "__EXIT__", "meta": {}}
+{"timestamp": "2026-06-30T05:51:46.197030+00:00", "event": "input_received", "source": "cli", "input": "open youtube", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:51:46.623398+00:00", "event": "executed", "source": "cli", "input": "open youtube", "intent": {"action": "open_url", "value": "youtube"}, "result": "Opened https://www.youtube.com.", "meta": {}}
+{"timestamp": "2026-06-30T05:52:02.018820+00:00", "event": "input_received", "source": "cli", "input": "exit", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T05:52:02.022481+00:00", "event": "executed", "source": "cli", "input": "exit", "intent": {"action": "exit", "value": null}, "result": "__EXIT__", "meta": {}}
+{"timestamp": "2026-06-30T06:23:12.759734+00:00", "event": "startup", "source": "assistant", "input": null, "intent": null, "result": null, "meta": {"ai": true, "tts": true, "stt": "vosk", "safe_mode": true, "tray": true, "ui": true, "clap": true}}
+{"timestamp": "2026-06-30T06:25:16.702271+00:00", "event": "input_received", "source": "clap", "input": "it's my unit", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:25:21.532312+00:00", "event": "executed", "source": "clap", "input": "it's my unit", "intent": {"action": "get_unit", "value": "Ryan"}, "result": "Unknown action: 'get_unit'\nType 'help' for available commands.", "meta": {}}
+{"timestamp": "2026-06-30T06:25:45.243902+00:00", "event": "input_received", "source": "clap", "input": "why not", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:26:21.248787+00:00", "event": "chat", "source": "clap", "input": "why not", "intent": {"action": "chat", "value": "why not"}, "result": "A query of existential significance, old chap. I exist to serve your needs and enhance your computing experience, certainly.", "meta": {}}
+{"timestamp": "2026-06-30T06:26:33.913171+00:00", "event": "input_received", "source": "clap", "input": "it be worse", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:26:54.402991+00:00", "event": "bad_transcript", "source": "voice", "input": null, "intent": null, "result": "two", "meta": {}}
+{"timestamp": "2026-06-30T06:27:04.420993+00:00", "event": "input_received", "source": "clap", "input": "yeah how a new job", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:27:42.437834+00:00", "event": "input_received", "source": "voice", "input": "illusion too much", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:28:30.052575+00:00", "event": "input_received", "source": "clap", "input": "okay not what happened", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:29:21.628247+00:00", "event": "input_received", "source": "clap", "input": "here", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:29:44.050528+00:00", "event": "input_received", "source": "clap", "input": "or gonna leave and eliminate the last know that", "intent": null, "result": null, "meta": {}}
+{"timestamp": "2026-06-30T06:37:43.573270+00:00", "event": "startup", "source": "assistant", "input": null, "intent": null, "result": null, "meta": {"ai": true, "tts": true, "stt": "vosk", "safe_mode": true, "tray": true, "ui": true, "clap": true}}
+{"timestamp": "2026-06-30T06:38:23.228784+00:00", "event": "bad_transcript", "source": "clap", "input": null, "intent": null, "result": "it", "meta": {}}
+{"timestamp": "2026-06-30T06:39:47.785948+00:00", "event": "shutdown", "source": "assistant", "input": null, "intent": null, "result": "stopped", "meta": {}}
+{"timestamp": "2026-06-30T06:48:34.058956+00:00", "event": "startup", "source": "assistant", "input": null, "intent": null, "result": null, "meta": {"ai": true, "tts": true, "stt": "vosk", "safe_mode": true, "tray": true, "ui": true, "clap": true}}
+{"timestamp": "2026-07-01T05:58:06.274492+00:00", "event": "startup", "source": "assistant", "input": null, "intent": null, "result": null, "meta": {"ai": true, "tts": true, "stt": "vosk", "safe_mode": true, "tray": true, "ui": true, "clap": true}}
+{"timestamp": "2026-07-01T05:58:55.204972+00:00", "event": "shutdown", "source": "assistant", "input": null, "intent": null, "result": "stopped", "meta": {}}
