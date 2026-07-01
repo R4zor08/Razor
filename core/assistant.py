@@ -22,7 +22,11 @@ from utils.wake_feedback import play_wake_beep
 from voice.audio_hub import AudioHub
 from voice.audio_queue import BackgroundListener
 from voice.clap_detector import ClapDetector
-from voice.speech_to_text import SpeechToText
+from ai.memory import get_memory
+from utils.scheduler import maybe_startup_greeting
+from utils.transcript import is_plausible_command
+from utils.warmup import warm_models
+from voice.speech_to_text import SpeechToText, get_speech_to_text
 from voice.text_to_speech import TextToSpeech, TTSError
 from voice.wake_word import WakeWord
 
@@ -62,6 +66,8 @@ class Assistant:
         self._clap: ClapDetector | None = None
         self._shutting_down = False
         self._ui_wake_shown = False
+        self._stt: SpeechToText | None = None
+        self._memory = get_memory()
 
     def _wake_instant_ui(self) -> None:
         """Called from wake-word audio thread the moment 'Hey Razor' is detected."""
@@ -73,8 +79,14 @@ class Assistant:
     def run(self) -> None:
         """Run the full assistant loop (console or tray background mode)."""
         self._log_startup()
+        warm_models()
+        self._stt = get_speech_to_text(self.stt_engine)
         self._start_ui()
         self._start_idle_listening()
+
+        greeting = maybe_startup_greeting()
+        if greeting and self.use_tts:
+            self._speak_async(greeting, personality=True)
 
         if self.tray_mode and config.TRAY_ENABLED:
             self._run_tray_mode()
@@ -175,7 +187,29 @@ class Assistant:
                     self._speak_async("One sec mate.", personality=False)
 
             intent = self.brain.reason(cleaned)
-            print(f"Intent: {json.dumps(intent)}")
+            print(f"Intent: {json.dumps(intent, default=str)}")
+
+            if intent.get("action") == "__instant__":
+                result = str(intent.get("value", ""))
+                self._ui_set_response(result)
+                self._memory.add_command(cleaned)
+                return result
+
+            if intent.get("action") == "__remember__":
+                result = str(intent.get("value", ""))
+                self._ui_set_response(result)
+                return result
+
+            if intent.get("action") == "__multi__":
+                steps = intent.get("value") or []
+                results: list[str] = []
+                for step in steps:
+                    if isinstance(step, dict):
+                        results.append(
+                            self._execute_intent(step, source=source, input_text=cleaned)
+                        )
+                result = "\n".join(r for r in results if r)
+                return result or "Done."
 
             if intent.get("action") == "chat":
                 result = self.brain.chat(intent.get("value") or cleaned)
@@ -189,15 +223,25 @@ class Assistant:
                 self._ui_set_response(result)
                 return result
 
-            if intent.get("action") == "unknown" and config.CHAT_FALLBACK:
-                result = self.brain.chat(cleaned)
-                self.actions.log(
-                    event="chat_fallback",
-                    source=source,
-                    input_text=cleaned,
-                    intent=intent,
-                    result=result,
-                )
+            if intent.get("action") == "unknown":
+                if config.CHAT_FALLBACK:
+                    result = self.brain.chat(cleaned)
+                    self.actions.log(
+                        event="chat_fallback",
+                        source=source,
+                        input_text=cleaned,
+                        intent=intent,
+                        result=result,
+                    )
+                else:
+                    result = "I didn't quite catch that. Try a simpler command?"
+                    self.actions.log(
+                        event="unknown_intent",
+                        source=source,
+                        input_text=cleaned,
+                        intent=intent,
+                        result=result,
+                    )
                 self._ui_set_response(result)
                 return result
 
@@ -221,6 +265,11 @@ class Assistant:
         return result
 
     def _execute_intent(self, intent: dict, *, source: str, input_text: str) -> str:
+        action = intent.get("action")
+        if action == "open_app" and intent.get("value"):
+            self._memory.set_last_opened_app(str(intent["value"]))
+        self._memory.add_command(input_text)
+
         result = self.router.route(intent)
         self.actions.log(
             event="executed",
@@ -230,6 +279,8 @@ class Assistant:
             result=result,
         )
         self._ui_set_response(result)
+        if config.EXECUTE_BEFORE_SPEAK and action not in {"chat", "help"}:
+            self._ui_show_done()
         return result
 
     def _start_ui(self) -> None:
@@ -348,14 +399,23 @@ class Assistant:
         if not command:
             message = "(no command heard)"
             print(message)
-            self._speak_async("I didn't catch that mate.")
-            self._ui_set_response("I didn't catch that mate.")
+            self._speak_async("I didn't catch that.")
+            self._ui_set_response("I didn't catch that — try again?")
             self.actions.log(event="no_command", source=source, result=message)
             self._ui_schedule_hide()
             return
 
-        print(f">> {command}")
         command = self._clean_command(command)
+        if not is_plausible_command(command):
+            message = "I didn't catch that — try again?"
+            print(message)
+            self._ui_set_response(message)
+            self.actions.log(event="bad_transcript", source=source, result=command)
+            self._speak_async(message)
+            self._ui_schedule_hide()
+            return
+
+        print(f">> {command}")
         self._ui_set_transcript(command, partial=False)
         result = self.handle_input(command, source=source)
         if result == "__EXIT__":
@@ -365,7 +425,8 @@ class Assistant:
 
         if result:
             print(result)
-            self._speak_async(result)
+            if config.EXECUTE_BEFORE_SPEAK or source in {"voice", "hotkey", "clap"}:
+                self._speak_async(result)
         print()
         self._ui_schedule_hide()
 
@@ -392,7 +453,9 @@ class Assistant:
 
         self._ui_set_status("listening")
         self._pause_hub()
-        stt = SpeechToText(engine=self.stt_engine)
+        if self._stt is None:
+            self._stt = get_speech_to_text(self.stt_engine)
+        stt = self._stt
         stt.reset()
         background = BackgroundListener()
 
@@ -493,6 +556,10 @@ class Assistant:
         if self._ui:
             self._ui.schedule_hide()
 
+    def _ui_show_done(self) -> None:
+        if self._ui:
+            self._ui.show_done()
+
     def _speak(self, text: str, *, personality: bool = True) -> None:
         if not self.use_tts:
             return
@@ -541,8 +608,8 @@ class Assistant:
         )
 
     def _print_banner(self) -> None:
-        print(f"{config.APP_NAME} v{config.APP_VERSION} — Assistant mode")
-        print(f"Say '{config.WAKE_PHRASE.title()}' — UI appears automatically.")
+        print(f"{config.APP_NAME} v{config.APP_VERSION} — Jarvis mode")
+        print(f"Say '{config.WAKE_PHRASE.title()}' — reflex commands run instantly.")
         if config.UI_IDLE_VISIBLE:
             print("Idle UI visible — Razor is always listening.")
         if config.HOTKEY_ENABLED:

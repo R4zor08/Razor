@@ -69,9 +69,9 @@ class IntentEngine:
         if not cleaned:
             return {"action": "unknown", "value": None}
 
-        fallback = self._fallback_parse(cleaned)
-        if fallback["action"] != "unknown":
-            return fallback
+        reflex = self.reflex_parse(cleaned)
+        if reflex["action"] != "unknown":
+            return reflex
 
         prompt = self.prompt_engine.build_intent_prompt(cleaned)
         logger.info("Parsing intent for: %s", cleaned)
@@ -83,9 +83,13 @@ class IntentEngine:
             )
         except OllamaError as exc:
             logger.warning("Ollama error (%s), using rule-based intent fallback", exc)
-            return fallback if fallback["action"] != "unknown" else self._fallback_parse(cleaned)
+            return reflex
 
         return self._validate_intent(raw, cleaned)
+
+    def reflex_parse(self, text: str) -> dict[str, Any]:
+        """Fast rule-based parse only — no Ollama."""
+        return self._fallback_parse(text.strip())
 
     def _validate_intent(self, raw: dict[str, Any], original_text: str) -> dict[str, Any]:
         action = str(raw.get("action", "unknown")).strip().lower()
@@ -159,12 +163,31 @@ class IntentEngine:
             if re.search(rf"\b(open|go to|launch)\s+{site}\b", lowered):
                 return {"action": "open_url", "value": site}
 
-        if any(p in lowered for p in ("volume up", "louder")):
+        if any(p in lowered for p in ("volume up", "louder", "turn up the volume", "turn up volume")):
             return {"action": "set_volume", "value": "up"}
-        if any(p in lowered for p in ("volume down", "quieter")):
+        if any(p in lowered for p in ("volume down", "quieter", "turn down the volume", "turn down volume")):
             return {"action": "set_volume", "value": "down"}
+        if "unmute" in lowered:
+            return {"action": "set_volume", "value": "unmute"}
         if "mute" in lowered:
             return {"action": "set_volume", "value": "mute"}
+        if any(p in lowered for p in ("brightness up", "brighter")):
+            return {"action": "set_brightness", "value": "up"}
+        if any(p in lowered for p in ("brightness down", "dimmer")):
+            return {"action": "set_brightness", "value": "down"}
+
+        quick_apps = (
+            "notepad", "calculator", "chrome", "firefox", "edge", "settings",
+            "explorer", "paint", "cmd", "terminal", "spotify", "discord",
+        )
+        for app in quick_apps:
+            if re.search(rf"\b(open|launch|start|run)\s+{app}\b", lowered):
+                return {"action": "open_app", "value": app}
+
+        if re.search(r"\bwhat time is it\b", lowered) or re.search(
+            r"\bwhat(?:'s| is) the time\b", lowered
+        ):
+            return {"action": "__instant__", "value": "__time__"}
         if "minimize" in lowered:
             return {"action": "minimize_window", "value": None}
         if "maximize" in lowered:
@@ -175,7 +198,7 @@ class IntentEngine:
             return {"action": "switch_app", "value": text[10:].strip()}
 
         patterns: list[tuple[str, str]] = [
-            (r"(?:open|launch|start|run)\s+(?:the\s+)?(?:app\s+)?(.+)", "open_app"),
+            (r"(?:open|launch|start|run|go to)\s+(?:the\s+)?(?:app\s+)?(.+)", "open_app"),
             (r"(?:close|quit|kill|stop)\s+(?:the\s+)?(?:app\s+)?(.+)", "close_app"),
             (r"(?:open|show)\s+(?:my\s+)?(.+?)\s+folder", "open_folder"),
             (r"(?:find|search)\s+(?:my\s+)?(?:file\s+)?(.+)", "search_file"),
