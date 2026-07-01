@@ -22,14 +22,21 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 APP_NAME = "Razor AI"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
+
+# Jarvis mind — speed + personality
+PERSONALITY = "jarvis"  # jarvis | aussie
+EXECUTE_BEFORE_SPEAK = True
+WARM_MODELS_ON_STARTUP = True
+PROACTIVE_GREETING = True
+JARVIS_BRIEFING = False
 
 # Voice
 WAKE_PHRASE = "hey razor"
-WAKE_RESPONSE = "Yes mate?"
+WAKE_RESPONSE = "Ready." if PERSONALITY == "jarvis" else "Yes mate?"
 WAKE_WORD = "razor"
 SAMPLE_RATE = 16000
-VOICE_BLOCK_MS = 750
+VOICE_BLOCK_MS = 500
 MIC_DEVICE = None  # None = system default; run `python main.py --list-mics` to list devices
 
 # Speech-to-text engine: "whisper" or "vosk"
@@ -45,7 +52,7 @@ WHISPER_COMPUTE_TYPE = "int8"  # use "float16" with cuda
 
 # Silence detection (Whisper utterance boundaries)
 SPEECH_ENERGY_THRESHOLD = 400  # RMS threshold for int16 PCM (tune for your mic)
-SILENCE_DURATION_MS = 1000  # silence after speech triggers transcription
+SILENCE_DURATION_MS = 700  # silence after speech triggers transcription
 MIN_SPEECH_MS = 300  # ignore utterances shorter than this
 
 # AI
@@ -54,12 +61,12 @@ OLLAMA_MODEL = "llama3.2:3b"
 OLLAMA_INTENT_MODEL = "llama3.2:1b"  # faster model for intent parsing; empty = use OLLAMA_MODEL
 OLLAMA_TIMEOUT = 60
 AI_ENABLED = True
-CHAT_FALLBACK = True  # answer general questions when intent is unknown
+CHAT_FALLBACK = False  # don't run chat on misheard garbage
 
 # Text-to-speech
 TTS_ENABLED = True
-TTS_PROVIDER = "auto"  # auto | elevenlabs | local
-TTS_LOCAL_RATE = 175
+TTS_PROVIDER = "local"  # local | auto | elevenlabs — local is fastest
+TTS_LOCAL_RATE = 195
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
 ELEVENLABS_MODEL = "eleven_multilingual_v2"
@@ -102,7 +109,7 @@ UI_IDLE_COMPACT = True  # collapse to idle pill instead of hiding completely
 WAKE_UI_FIRST = True
 WAKE_DEBUG = False  # log partial STT when razor-like words heard
 WAKE_BEEP = True
-WAKE_SPEAK = True  # speak "Yes mate?" after UI appears (async)
+WAKE_SPEAK = False  # UI + beep only — listen faster
 
 # Double-clap activation
 CLAP_ENABLED = True
