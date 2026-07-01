@@ -97,10 +97,10 @@ class OllamaClient:
                 f"Cannot connect to Ollama at {self.host}. Is Ollama running?"
             ) from exc
 
-    def chat(self, prompt: str) -> str:
+    def chat(self, prompt: str, *, model: str | None = None) -> str:
         """Return a conversational response (non-JSON)."""
         payload = {
-            "model": self.model,
+            "model": model or self.model,
             "prompt": prompt,
             "stream": False,
         }
