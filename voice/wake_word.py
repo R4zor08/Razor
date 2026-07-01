@@ -11,7 +11,7 @@ import config
 from utils.logger import get_logger
 from voice.audio_queue import BackgroundListener
 from voice.listener import Listener
-from voice.speech_to_text import VoskSpeechToText
+from voice.speech_to_text import VoskSpeechToText, get_vosk_backend
 
 logger = get_logger(__name__)
 
@@ -32,7 +32,7 @@ class WakeWord:
         self.phrase = (phrase or config.WAKE_PHRASE).lower()
         self.on_trigger = on_trigger
         self._listener = Listener()
-        self._stt = VoskSpeechToText()
+        self._stt = get_vosk_backend()
         self._running = False
         self._triggered = False
         self._lock = threading.Lock()

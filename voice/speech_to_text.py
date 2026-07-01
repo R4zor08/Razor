@@ -222,13 +222,42 @@ class WhisperSpeechToText(STTBackend):
         )
 
 
+_vosk_singleton: VoskSpeechToText | None = None
+_stt_singleton: SpeechToText | None = None
+
+
+def get_vosk_backend() -> VoskSpeechToText:
+    """Shared Vosk instance — model loads once."""
+    global _vosk_singleton
+    if _vosk_singleton is None:
+        _vosk_singleton = VoskSpeechToText()
+        _ = _vosk_singleton.model
+        logger.info("Vosk model preloaded (shared instance).")
+    return _vosk_singleton
+
+
+def preload_vosk() -> None:
+    get_vosk_backend()
+
+
+def get_speech_to_text(engine: str | None = None) -> SpeechToText:
+    """Shared SpeechToText facade for wake + command listening."""
+    global _stt_singleton
+    engine_name = (engine or config.STT_ENGINE).lower()
+    if _stt_singleton is None or _stt_singleton.engine != engine_name:
+        _stt_singleton = SpeechToText(engine=engine_name)
+        if engine_name == "vosk":
+            preload_vosk()
+    return _stt_singleton
+
+
 class SpeechToText:
     """Facade that delegates to the configured STT backend."""
 
     def __init__(self, engine: str | None = None) -> None:
         engine_name = (engine or config.STT_ENGINE).lower()
         if engine_name == "vosk":
-            self._backend: STTBackend = VoskSpeechToText()
+            self._backend: STTBackend = get_vosk_backend()
         elif engine_name == "whisper":
             self._backend = WhisperSpeechToText()
         else:

@@ -16,6 +16,8 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+_elevenlabs_session_disabled = False
+
 
 class TTSError(Exception):
     """Raised when text-to-speech synthesis or playback fails."""
@@ -43,11 +45,12 @@ class TextToSpeech:
 
     def speak(self, text: str) -> Path | None:
         """Synthesize speech and play it."""
+        global _elevenlabs_session_disabled
         cleaned = text.strip()
         if not cleaned:
             raise TTSError("Cannot speak empty text.")
 
-        if self.provider == "local":
+        if self.provider == "local" or _elevenlabs_session_disabled:
             self._speak_local(cleaned)
             return None
 
@@ -57,7 +60,8 @@ class TextToSpeech:
             return audio_path
         except TTSError as exc:
             if self.provider == "auto" and self._should_fallback(exc):
-                logger.warning("ElevenLabs failed (%s). Falling back to local TTS.", exc)
+                _elevenlabs_session_disabled = True
+                logger.warning("ElevenLabs disabled for session (%s). Using local TTS.", exc)
                 self._speak_local(cleaned)
                 return None
             raise
@@ -131,7 +135,10 @@ class TextToSpeech:
             ) from exc
 
         engine = pyttsx3.init()
-        engine.setProperty("rate", config.TTS_LOCAL_RATE)
+        rate = config.TTS_LOCAL_RATE
+        if config.PERSONALITY == "jarvis":
+            rate = min(220, rate + 25)
+        engine.setProperty("rate", rate)
 
         for voice in engine.getProperty("voices"):
             name = voice.name.lower()
