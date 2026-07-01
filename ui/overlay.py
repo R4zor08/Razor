@@ -23,10 +23,11 @@ _COLOR_MUTED = "#7dd3fc"
 _COLOR_GLOW = "#00d4ff"
 
 _STATUS_LABELS = {
-    "activated": "Yes mate?",
+    "activated": config.WAKE_RESPONSE,
     "listening": "Listening...",
     "processing": "Processing...",
     "responding": "Razor",
+    "done": "Done.",
     "confirm": "Confirm?",
     "idle": f"Razor — say \"{config.WAKE_PHRASE.title()}\"",
 }
@@ -81,6 +82,9 @@ class ActivationOverlay:
 
     def set_response(self, text: str) -> None:
         self._post("response", text)
+
+    def show_done(self) -> None:
+        self._post("done", None)
 
     def schedule_hide(self, delay: float | None = None) -> None:
         self._post("hide_later", delay if delay is not None else config.UI_AUTO_HIDE_SECONDS)
@@ -312,6 +316,12 @@ class ActivationOverlay:
             self._status_var.set(_STATUS_LABELS["responding"])
             if self._response_var:
                 self._response_var.set(f"Razor: {payload}")
+            if self._pulse_var:
+                self._pulse_var.set("")
+            return
+
+        if action == "done":
+            self._status_var.set(_STATUS_LABELS["done"])
             if self._pulse_var:
                 self._pulse_var.set("")
             return
