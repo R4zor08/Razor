@@ -1,55 +1,58 @@
-"""Australian personality phrases for spoken responses."""
+"""Personality formatting for spoken responses."""
 
 from __future__ import annotations
 
 import random
 import re
 
-SUCCESS_LEADS = (
-    "Righto, doing that now.",
-    "No worries mate.",
-    "Yeah, on it.",
-)
+import config
 
-SUCCESS_TAIL = (
-    "All sorted for ya.",
-    "Done and dusted.",
-    "Too easy.",
-)
+JARVIS_SUCCESS = ("Done.", "Certainly.", "Right away.", "Complete.")
+JARVIS_FAILURE = ("I'm afraid that didn't work.", "Unable to complete that, sir.")
 
-FAILURE_LEADS = (
-    "No worries mate,",
-    "Ah mate,",
-)
+AUSSIE_SUCCESS_LEADS = ("Righto, doing that now.", "No worries mate.", "Yeah, on it.")
+AUSSIE_SUCCESS_TAIL = ("All sorted for ya.", "Done and dusted.", "Too easy.")
+AUSSIE_FAILURE_LEADS = ("No worries mate,", "Ah mate,")
 
 
 def format_wake_response(text: str) -> str:
-    """Format the wake-word acknowledgement."""
     return text.strip()
 
 
 def format_spoken_response(technical_result: str) -> str:
-    """Turn a technical executor result into natural Australian speech."""
-    result = technical_result.strip()
-    if not result:
-        return random.choice(SUCCESS_LEADS)
+    if config.PERSONALITY == "jarvis":
+        return _format_jarvis(technical_result)
+    return _format_aussie(technical_result)
 
-    if _is_failure(result):
-        lead = random.choice(FAILURE_LEADS)
-        return f"{lead} {_humanize(result)}"
 
-    if _is_search_result(result):
-        return f"{random.choice(SUCCESS_LEADS)} {_summarize_search(result)} {random.choice(SUCCESS_TAIL)}"
+def _format_jarvis(result: str) -> str:
+    text = result.strip()
+    if not text:
+        return random.choice(JARVIS_SUCCESS)
+    if _is_failure(text):
+        return f"{random.choice(JARVIS_FAILURE)} {_humanize(text)}"
+    if _is_search_result(text):
+        return _summarize_search(text)
+    if text.lower().startswith("opened") or text.lower().startswith("created"):
+        return random.choice(JARVIS_SUCCESS)
+    return text if len(text) < 120 else text[:117] + "..."
 
-    lead = random.choice(SUCCESS_LEADS)
-    tail = random.choice(SUCCESS_TAIL)
-    return f"{lead} {_humanize(result)} {tail}"
+
+def _format_aussie(result: str) -> str:
+    text = result.strip()
+    if not text:
+        return random.choice(AUSSIE_SUCCESS_LEADS)
+    if _is_failure(text):
+        return f"{random.choice(AUSSIE_FAILURE_LEADS)} {_humanize(text)}"
+    if _is_search_result(text):
+        return f"{random.choice(AUSSIE_SUCCESS_LEADS)} {_summarize_search(text)} {random.choice(AUSSIE_SUCCESS_TAIL)}"
+    return f"{random.choice(AUSSIE_SUCCESS_LEADS)} {_humanize(text)} {random.choice(AUSSIE_SUCCESS_TAIL)}"
 
 
 def _is_failure(result: str) -> bool:
     lowered = result.lower()
     return lowered.startswith(
-        ("could not", "failed", "unknown", "no running", "no file", "i don't know")
+        ("could not", "failed", "unknown", "no running", "no file", "i don't know", "i didn't catch")
     ) or "not found" in lowered
 
 
@@ -62,21 +65,19 @@ def _humanize(result: str) -> str:
     replacements = (
         (r"^Opened\s+", "I've opened "),
         (r"^Closed\s+", "I've closed "),
-        (r"^Shutting down.*", "shutting down the PC now"),
-        (r"^Restarting.*", "restarting the PC now"),
         (r"^Could not find application '(.+)'", r"I couldn't find \1"),
-        (r"^No file found matching '(.+)'", r"I couldn't find a file called \1"),
-        (r"^No running process found for '(.+)'", r"\1 doesn't look like it's running"),
     )
     for pattern, repl in replacements:
         if re.match(pattern, text, re.IGNORECASE):
             return re.sub(pattern, repl, text, flags=re.IGNORECASE)
-    return text.lower()
+    return text.lower() if config.PERSONALITY == "aussie" else text
 
 
 def _summarize_search(result: str) -> str:
     match = re.search(r"Found\s+(\d+)\s+file\(s\)\s+matching\s+'([^']+)'", result, re.IGNORECASE)
     if match:
         count, keyword = match.groups()
+        if config.PERSONALITY == "jarvis":
+            return f"Found {count} files matching {keyword}."
         return f"I found {count} files matching {keyword}"
-    return "I've found some files for ya"
+    return result
