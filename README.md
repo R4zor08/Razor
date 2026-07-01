@@ -1,24 +1,50 @@
-# Razor AI v0.3
+# Razor AI v0.4 — Jarvis Mode
 
-Local voice assistant for Windows — say **"Hey Razor"** and the UI appears instantly. No hotkey or extra activation needed.
+Local voice assistant for Windows — say **"Hey Razor"** and the UI appears instantly. Reflex commands run in under a second; complex questions use local Ollama.
+
+## Jarvis Mind
+
+| Layer | Behavior |
+|-------|----------|
+| **Presence** | Always listening in tray; idle pill shows Razor is ready |
+| **Reflexes** | "open notepad", "volume down" → action in &lt;2s, no LLM |
+| **Mind** | Complex requests → Ollama plans tools, brief Jarvis reply |
+| **Memory** | Remembers name, last app, recent commands across restarts |
+
+### Speed tips
+
+- `TTS_PROVIDER = "local"` — skip ElevenLabs API delays (default in v0.4)
+- `WAKE_SPEAK = False` — UI + beep only; listen immediately after wake
+- `CHAT_FALLBACK = False` — misheard garbage won't trigger 20s chat
+- `WARM_MODELS_ON_STARTUP = True` — preloads Vosk + Ollama on launch
+- Reflex rules in `core/intent_engine.py` run first (&lt;50ms)
+
+### Memory commands
+
+| Say this | Result |
+|----------|--------|
+| "Remember my name is Alex" | Stored in `assets/data/memory.json` |
+| "What's my name?" | Recalls stored name |
+| "What do you remember?" | Summary of stored context |
+| "Open calculator" then "Open it again" | Reopens last app from memory |
+
+Memory file is gitignored at `assets/data/memory.json`.
 
 ## Features
 
-- **"Hey Razor" = instant UI** — overlay pops up immediately when wake word is heard
-- **Idle UI pill** — compact bar always visible: "Razor — say Hey Razor" (always listening)
-- Wake word with improved matching (razer, razr, hay razor, split utterances)
+- **"Hey Razor" = instant UI** — overlay expands immediately on wake word
+- **Idle UI pill** — compact bar: "Razor — say Hey Razor"
+- **Execute before speak** — OS action runs first, TTS after
+- **Cached Vosk STT** — model loads once, shared for wake + commands
+- Wake word with improved matching (razer, razr, hay razor)
 - Optional: global hotkey (`Ctrl+Shift+R`) or double-clap
-- Energy-themed dark overlay (cyan accent) — listening, transcript, response
-- Background tray mode — built-in on login via `--install-startup`
-- Fast speech-to-text (Vosk default; Whisper optional)
-- Natural language commands via local Ollama
-- Web search, open URLs, create files/folders
-- Wide local file search across your user profile
-- Australian voice output (ElevenLabs with local fallback)
-- OS control: apps, files, volume, brightness, windows, shortcuts
+- Energy-themed dark overlay (cyan accent)
+- Background tray mode — auto-start on login via `--install-startup`
+- Two-tier brain: reflex rules → memory → agent (1b) → chat (3b)
+- Web search, open URLs, create files/folders, volume, brightness, windows
+- Jarvis personality — calm, brief ("Certainly.", "Done.", "Right away.")
 - Safe mode for shutdown/restart confirmation
-- Single-instance lock (no duplicate tray icons)
-- Action logging to `assets/logs/actions.log`
+- Single-instance lock, action logging
 
 ## Quick start
 
@@ -29,15 +55,13 @@ python main.py --tray
 
 Say **"Hey Razor"** only — UI expands instantly. No button press required.
 
-Hotkey and clap are optional fallbacks.
-
 ## Built into your laptop (auto-start)
 
 ```powershell
 python main.py --install-startup
 ```
 
-Then **sign out and back in** (or reboot). Razor starts silently via `pythonw` in tray mode with wake word, UI, hotkey, and clap detection.
+Sign out and back in (or reboot). Razor starts silently via `pythonw` in tray mode.
 
 Remove with:
 
@@ -49,33 +73,20 @@ python main.py --uninstall-startup
 
 | State | What you see |
 |-------|----------------|
-| **Idle** | Compact pill at bottom: "Razor — say Hey Razor" |
-| **Wake** | Expands instantly on "Hey Razor" — "Yes mate?" |
+| **Idle** | Compact pill: "Razor — say Hey Razor" |
+| **Wake** | Expands instantly — "Ready." |
 | **Listening** | Live transcript, pulse indicator |
 | **Processing** | "Processing..." — stays visible |
-| **Done** | Shows response, then collapses to idle pill after 8s |
+| **Done** | Flash "Done." then response; collapses to idle after 8s |
 
-Config: `UI_IDLE_VISIBLE`, `WAKE_UI_FIRST`, `UI_AUTO_HIDE_SECONDS`
-
-## Activation methods (optional extras)
+## Activation methods
 
 | Method | Action |
 |--------|--------|
-| **"Hey Razor"** | Wake word → UI pops up → "Yes mate?" → listen for command |
+| **"Hey Razor"** | Wake word → UI → listen for command |
 | **Ctrl+Shift+R** | Instant activation without wake word |
-| **Double clap** | Two claps within ~0.7s (tune `CLAP_THRESHOLD` in config) |
-| **Tray menu** | Right-click blue **R** → Activate (listen) |
-
-## Activation UI
-
-When Razor activates, a small always-on-top overlay appears (bottom-center by default):
-
-- **Status** — Yes mate? / Listening... / Processing... / Confirm?
-- **Transcript** — what you said (live partial text with Vosk)
-- **Response** — Razor's reply or action result
-- **Auto-hide** — hides after 5 seconds when idle (`UI_AUTO_HIDE_SECONDS`)
-
-Disable UI: set `UI_ENABLED = False` in `config.py`.
+| **Double clap** | Two claps within ~0.7s |
+| **Tray menu** | Right-click **R** → Activate |
 
 ## Modes
 
@@ -91,50 +102,54 @@ Disable UI: set `UI_ENABLED = False` in `config.py`.
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| `UI_IDLE_VISIBLE` | `True` | Compact idle pill always on screen |
-| `WAKE_UI_FIRST` | `True` | UI before beep/TTS on wake word |
-| `WAKE_DEBUG` | `False` | Log partial STT for wake tuning |
-| `UI_AUTO_HIDE_SECONDS` | `5` | Hide overlay after idle |
+| `PERSONALITY` | `jarvis` | `jarvis` or `aussie` |
+| `TTS_PROVIDER` | `local` | Fastest; set `auto` for ElevenLabs |
+| `WAKE_SPEAK` | `False` | Skip wake TTS for faster listen |
 | `WAKE_BEEP` | `True` | Instant beep on activation |
-| `WAKE_SPEAK` | `True` | TTS "Yes mate?" (runs after UI/beep) |
-| `CLAP_ENABLED` | `True` | Double-clap activation |
-| `CLAP_THRESHOLD` | `2500` | Raise if false triggers; lower if claps missed |
-| `SINGLE_INSTANCE` | `True` | Prevent duplicate Razor processes |
+| `CHAT_FALLBACK` | `False` | No chat on unknown/misheard input |
+| `EXECUTE_BEFORE_SPEAK` | `True` | Action before voice reply |
+| `WARM_MODELS_ON_STARTUP` | `True` | Preload Vosk + Ollama |
+| `PROACTIVE_GREETING` | `True` | Once-per-day "Good morning" on startup |
+| `UI_IDLE_VISIBLE` | `True` | Compact idle pill always on screen |
 | `STT_ENGINE` | `vosk` | Faster than Whisper on CPU |
-| `HOTKEY` | `<ctrl>+<shift>+r` | Global activation |
+| `OLLAMA_INTENT_MODEL` | `llama3.2:1b` | Agent / tool picking |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Chat / reasoning |
 
 ## Troubleshooting
 
-**No tray icon** — Run `python main.py --tray`; check Task Manager for `pythonw.exe`; click **^** near clock.
+**Slow first command** — Check `razor.log` for "Models warmed". Ensure Ollama is running.
 
-**UI doesn't appear** — Ensure `UI_ENABLED = True`; tkinter is included with Python on Windows.
+**ElevenLabs 402** — Set `TTS_PROVIDER = "local"` (default). Session auto-disables ElevenLabs after first 402.
 
-**Clap too sensitive / not detected** — Tune `CLAP_THRESHOLD`, `CLAP_MIN_GAP_MS`, `CLAP_MAX_GAP_MS`.
+**Misheard commands** — Short/garbage transcripts are rejected without calling Ollama.
 
-**Quit cleanly** — Tray → **Quit** (don't Ctrl+C in terminal when using `--tray`).
+**No tray icon** — Run `python main.py --tray`; check Task Manager for `pythonw.exe`.
 
-**Mic overflow** — Run `--list-mics`, set `MIC_DEVICE` or leave `None`.
+**Quit cleanly** — Tray → **Quit** (don't Ctrl+C when using `--tray`).
 
 ## Acceptance tests
 
-1. Reboot/sign-in → Razor in tray, no terminal
-2. "Hey Razor" → UI within ~0.5s, then listens
-3. "open notepad" → Notepad opens, UI shows result, logged
-4. Ctrl+Shift+R → UI without wake word
-5. Double clap → UI appears
-6. UI auto-hides after idle
-7. Tray → Quit → clean exit
-8. "shutdown" → confirmation in UI; no shutdown until "yes"
+1. Startup → idle pill visible, "Models warmed" in log, no Vosk reload on 2nd command
+2. "Hey Razor" → "open notepad" → Notepad in &lt;3s, TTS after
+3. "Hey Razor" → "volume down" → volume changes in &lt;2s (no Ollama in log)
+4. "Hey Razor" → "what is Python" → Jarvis-style chat via Ollama 3b
+5. "Open calculator" then "open it again" → opens calculator from memory
+6. Misheard/empty transcript → "didn't catch that", no Ollama chat
+7. ElevenLabs 402 → local TTS only for rest of session
+8. `actions.log` records executions; `memory.json` persists across restart
+9. `python main.py --cli` still works
+10. Tray → Quit → clean shutdown
 
 ## Logs
 
 - `assets/logs/razor.log` — application log
 - `assets/logs/actions.log` — JSON audit log
+- `assets/data/memory.json` — user memory (local only)
 
 ## Requirements
 
 - Python 3.11+
-- Ollama running locally
+- Ollama running locally (`llama3.2:1b`, `llama3.2:3b`)
 - Vosk model at `assets/models/vosk-model-small-en-us-0.15`
 - Microphone
 - pystray + Pillow (tray icon)
