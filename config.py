@@ -22,7 +22,7 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 APP_NAME = "Razor AI"
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.4.1"
 
 # Jarvis mind — speed + personality
 PERSONALITY = "jarvis"  # jarvis | aussie
@@ -54,6 +54,7 @@ WHISPER_COMPUTE_TYPE = "int8"  # use "float16" with cuda
 SPEECH_ENERGY_THRESHOLD = 400  # RMS threshold for int16 PCM (tune for your mic)
 SILENCE_DURATION_MS = 700  # silence after speech triggers transcription
 MIN_SPEECH_MS = 300  # ignore utterances shorter than this
+STT_MIN_CONFIDENCE = 0.45  # reject Vosk transcripts below this average word confidence
 
 # AI
 OLLAMA_HOST = "http://localhost:11434"
@@ -111,8 +112,8 @@ WAKE_DEBUG = False  # log partial STT when razor-like words heard
 WAKE_BEEP = True
 WAKE_SPEAK = False  # UI + beep only — listen faster
 
-# Double-clap activation
-CLAP_ENABLED = True
+# Double-clap activation (disable until wake word is reliable, or keep with threaded activate)
+CLAP_ENABLED = False
 CLAP_THRESHOLD = 2500  # RMS energy for a clap (tune for your mic)
 CLAP_MIN_GAP_MS = 120
 CLAP_MAX_GAP_MS = 700
