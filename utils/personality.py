@@ -19,6 +19,18 @@ def format_wake_response(text: str) -> str:
     return text.strip()
 
 
+def exit_phrase() -> str:
+    if config.PERSONALITY == "jarvis":
+        return "Goodbye."
+    return "Catch ya later mate."
+
+
+def processing_phrase() -> str:
+    if config.PERSONALITY == "jarvis":
+        return "One moment."
+    return "One sec mate."
+
+
 def format_spoken_response(technical_result: str) -> str:
     if config.PERSONALITY == "jarvis":
         return _format_jarvis(technical_result)
