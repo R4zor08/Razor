@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import threading
 import time
 from collections.abc import Callable
 
@@ -58,17 +57,7 @@ class ClapDetector:
                 self._clap_times.clear()
                 self._last_trigger = now
                 logger.info("Double clap detected")
-                threading.Thread(
-                    target=self._fire_callback,
-                    daemon=True,
-                    name="razor-clap",
-                ).start()
-
-    def _fire_callback(self) -> None:
-        try:
-            self.on_double_clap()
-        except Exception as exc:
-            logger.warning("Clap callback failed: %s", exc)
+                self.on_double_clap()
 
     def set_armed(self, armed: bool) -> None:
         self._armed = armed

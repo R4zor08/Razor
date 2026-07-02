@@ -50,6 +50,7 @@ class VoskSpeechToText(STTBackend):
         self.model_path = Path(model_path or config.VOSK_MODEL_PATH)
         self._model: Any = None
         self._recognizer: Any = None
+        self._last_confidence: float | None = None
 
     @property
     def is_streaming(self) -> bool:
@@ -66,6 +67,11 @@ class VoskSpeechToText(STTBackend):
 
         self._recognizer = vosk.KaldiRecognizer(self.model, config.SAMPLE_RATE)
         self._recognizer.SetWords(True)
+        self._last_confidence = None
+
+    @property
+    def last_confidence(self) -> float | None:
+        return self._last_confidence
 
     def process_chunk(self, audio_bytes: bytes) -> tuple[str | None, str | None]:
         if self._recognizer is None:
@@ -74,6 +80,7 @@ class VoskSpeechToText(STTBackend):
         if self._recognizer.AcceptWaveform(audio_bytes):
             result = json.loads(self._recognizer.Result())
             text = result.get("text", "").strip()
+            self._last_confidence = self._confidence_from_result(result)
             return (text or None, None)
 
         partial = json.loads(self._recognizer.PartialResult())
@@ -85,7 +92,18 @@ class VoskSpeechToText(STTBackend):
             return None
         result = json.loads(self._recognizer.FinalResult())
         text = result.get("text", "").strip()
+        self._last_confidence = self._confidence_from_result(result)
         return text or None
+
+    @staticmethod
+    def _confidence_from_result(result: dict[str, Any]) -> float | None:
+        words = result.get("result")
+        if not isinstance(words, list) or not words:
+            return None
+        confs = [float(w["conf"]) for w in words if isinstance(w, dict) and "conf" in w]
+        if not confs:
+            return None
+        return sum(confs) / len(confs)
 
     def _load_model(self) -> None:
         if not self.model_path.is_dir():
@@ -277,6 +295,12 @@ class SpeechToText:
 
     def flush(self) -> str | None:
         return self._backend.flush()
+
+    @property
+    def last_confidence(self) -> float | None:
+        if hasattr(self._backend, "last_confidence"):
+            return self._backend.last_confidence
+        return None
 
     def consume_utterance_complete(self) -> bool:
         """Return True when a non-streaming backend finished an utterance."""
