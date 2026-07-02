@@ -2,12 +2,14 @@
 
 import argparse
 import sys
+import threading
 
 import config
 from core.assistant import Assistant
 from utils.logger import get_logger
 from utils.single_instance import acquire_single_instance, release_single_instance
 from utils.startup import install_startup, uninstall_startup
+from utils.warmup import warm_models
 from voice.listener import Listener
 
 logger = get_logger(__name__)
@@ -15,6 +17,12 @@ logger = get_logger(__name__)
 
 def run_cli(*, use_ai: bool = True) -> None:
     """Interactive CLI for text commands."""
+    if use_ai and config.WARM_MODELS_ON_STARTUP:
+        threading.Thread(
+            target=warm_models,
+            daemon=True,
+            name="razor-warmup",
+        ).start()
     assistant = Assistant(use_ai=use_ai, use_tts=False)
     mode = "AI" if use_ai and config.AI_ENABLED else "CLI"
     print(f"{config.APP_NAME} v{config.APP_VERSION} — {mode} mode")
