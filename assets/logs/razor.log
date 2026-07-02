@@ -495,3 +495,78 @@
 2026-07-01 13:58:37,506 [INFO] voice.text_to_speech: Spoke via local TTS
 2026-07-01 13:58:55,184 [INFO] voice.listener: Microphone stream stopped.
 2026-07-01 13:58:55,222 [INFO] core.assistant: Razor shutdown complete.
+2026-07-01 18:11:20,296 [INFO] core.brain: Reflex intent: {'action': 'set_volume', 'value': 'up'}
+2026-07-01 18:12:41,761 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-07-01 18:12:42,419 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-07-01 18:12:42,419 [INFO] core.assistant: Starting Razor AI v0.4.1
+2026-07-01 18:12:42,902 [INFO] utils.health: Health: mic=ok ollama=ok vosk=ok
+2026-07-01 18:12:43,884 [INFO] ui.overlay: Activation UI overlay started.
+2026-07-01 18:12:44,174 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-07-01 18:12:44,174 [INFO] voice.audio_hub: AudioHub: microphone stream started
+2026-07-01 18:12:44,353 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=False, hub=True)
+2026-07-01 18:12:44,353 [INFO] core.assistant: Starting tray background mode.
+2026-07-01 18:12:44,440 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-07-01 18:12:44,441 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-07-01 18:12:44,524 [INFO] utils.tray: System tray icon started.
+2026-07-01 18:12:44,785 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-01 18:12:51,717 [INFO] voice.listener: Microphone stream stopped.
+2026-07-01 18:12:51,718 [INFO] voice.audio_hub: AudioHub: microphone stream stopped
+2026-07-01 18:12:51,721 [INFO] core.assistant: Razor shutdown complete.
+2026-07-01 18:15:42,621 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-07-01 18:15:43,085 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-07-01 18:15:54,814 [INFO] utils.warmup: Models warmed (Ollama llama3.2:1b + STT).
+2026-07-01 18:16:00,442 [INFO] core.brain: Reflex intent: {'action': 'search_file', 'value': 'what is lif'}
+2026-07-01 18:16:52,541 [INFO] core.brain: Reflex intent: {'action': 'search_file', 'value': 'in google, what is life?'}
+2026-07-01 18:17:11,217 [INFO] core.brain: Reflex intent: {'action': 'search_web', 'value': 'and search it what is life'}
+2026-07-01 18:17:44,476 [INFO] core.brain: Reflex intent: {'action': 'search_web', 'value': 'and go to incognito'}
+2026-07-01 18:17:56,688 [INFO] core.brain: Reflex intent: {'action': 'open_app', 'value': 'incognito'}
+2026-07-01 18:20:03,436 [INFO] core.brain: Reflex intent: {'action': 'search_web', 'value': 'and open incognito'}
+2026-07-01 18:20:24,343 [INFO] core.brain: Reflex intent: {'action': 'exit', 'value': None}
+2026-07-02 10:52:11,494 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-07-02 10:52:13,813 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-07-02 10:52:13,814 [INFO] core.assistant: Starting Razor AI v0.4.1
+2026-07-02 10:52:25,240 [INFO] utils.health: Health: mic=ok ollama=ok vosk=ok
+2026-07-02 10:52:28,669 [INFO] ui.overlay: Activation UI overlay started.
+2026-07-02 10:52:29,285 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-07-02 10:52:29,285 [INFO] voice.audio_hub: AudioHub: microphone stream started
+2026-07-02 10:52:29,876 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=False, hub=True)
+2026-07-02 10:52:29,879 [INFO] utils.scheduler: Proactive greeting: Good morning, Ryan. Razor is online.
+2026-07-02 10:52:29,886 [INFO] core.assistant: Starting tray background mode.
+2026-07-02 10:52:30,326 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-07-02 10:52:30,328 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-07-02 10:52:30,936 [INFO] utils.tray: System tray icon started.
+2026-07-02 10:52:31,374 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-02 10:52:39,651 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-07-02 10:52:56,776 [INFO] utils.warmup: Models warmed (Ollama llama3.2:1b + STT).
+2026-07-02 10:55:26,207 [INFO] voice.wake_word: Wake phrase detected in: a razor
+2026-07-02 10:55:27,116 [INFO] voice.audio_hub: AudioHub: command mode (mic stream stays open)
+2026-07-02 10:55:32,523 [INFO] voice.audio_hub: AudioHub: idle mode (wake + clap)
+2026-07-02 10:55:32,545 [INFO] core.brain: Reflex intent: {'action': 'open_app', 'value': 'not but'}
+2026-07-02 10:55:34,519 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-02 10:55:35,335 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-07-02 10:55:51,497 [INFO] voice.wake_word: Wake phrase detected in: hey razor
+2026-07-02 10:55:52,113 [INFO] voice.audio_hub: AudioHub: command mode (mic stream stays open)
+2026-07-02 10:55:56,012 [INFO] voice.audio_hub: AudioHub: idle mode (wake + clap)
+2026-07-02 10:55:56,031 [INFO] core.brain: Agent planning for: police have been
+2026-07-02 10:56:00,192 [WARNING] ai.agent: Agent plan failed: Cannot connect to Ollama at http://localhost:11434. Is Ollama running?
+2026-07-02 10:56:00,999 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-02 10:56:03,062 [INFO] voice.text_to_speech: Spoke via local TTS
+2026-07-02 10:56:29,996 [INFO] voice.listener: Microphone stream stopped.
+2026-07-02 10:56:29,999 [INFO] voice.audio_hub: AudioHub: microphone stream stopped
+2026-07-02 10:56:30,009 [INFO] core.assistant: Razor shutdown complete.
+2026-07-02 13:17:41,674 [INFO] voice.speech_to_text: Loading Vosk model from assets\models\vosk-model-small-en-us-0.15
+2026-07-02 13:17:42,951 [INFO] voice.speech_to_text: Vosk model preloaded (shared instance).
+2026-07-02 13:17:42,951 [INFO] core.assistant: Starting Razor AI v0.4.1
+2026-07-02 13:17:46,567 [INFO] utils.health: Health: mic=ok ollama=ok vosk=ok
+2026-07-02 13:17:47,555 [INFO] ui.overlay: Activation UI overlay started.
+2026-07-02 13:17:47,729 [INFO] voice.listener: Listening on microphone (sample_rate=16000, block=500ms)
+2026-07-02 13:17:47,729 [INFO] voice.audio_hub: AudioHub: microphone stream started
+2026-07-02 13:17:47,930 [INFO] core.assistant: Idle listening started (wake=hey razor, clap=False, hub=True)
+2026-07-02 13:17:47,930 [INFO] core.assistant: Starting tray background mode.
+2026-07-02 13:17:48,051 [INFO] utils.hotkey: Global hotkey registered: <ctrl>+<shift>+r
+2026-07-02 13:17:48,052 [INFO] core.assistant: Razor ready — tray mode active (wake word + hotkey + UI).
+2026-07-02 13:17:48,217 [INFO] utils.tray: System tray icon started.
+2026-07-02 13:17:48,426 [INFO] voice.wake_word: Waiting for wake phrase: 'hey razor'
+2026-07-02 13:17:54,325 [INFO] voice.listener: Microphone stream stopped.
+2026-07-02 13:17:54,325 [INFO] voice.audio_hub: AudioHub: microphone stream stopped
+2026-07-02 13:17:54,330 [INFO] core.assistant: Razor shutdown complete.
