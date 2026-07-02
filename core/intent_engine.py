@@ -91,6 +91,15 @@ class IntentEngine:
         """Fast rule-based parse only — no Ollama."""
         return self._fallback_parse(text.strip())
 
+    def validate_intent(self, raw: dict[str, Any], original_text: str) -> dict[str, Any]:
+        """Validate a raw intent dict (e.g. from agent)."""
+        if not isinstance(raw, dict):
+            return {"action": "unknown", "value": original_text}
+        action = str(raw.get("action", "unknown")).strip().lower()
+        if action == "__instant__":
+            return raw
+        return self._validate_intent(raw, original_text)
+
     def _validate_intent(self, raw: dict[str, Any], original_text: str) -> dict[str, Any]:
         action = str(raw.get("action", "unknown")).strip().lower()
         value = raw.get("value")

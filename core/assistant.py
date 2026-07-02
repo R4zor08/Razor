@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 import threading
 import time
 
@@ -15,12 +14,17 @@ from ui.overlay import ActivationOverlay
 from utils.action_logger import ActionLogger
 from utils.hotkey import GlobalHotkey
 from utils.logger import get_logger
-from utils.personality import format_spoken_response, format_wake_response
+from utils.personality import (
+    exit_phrase,
+    format_spoken_response,
+    format_wake_response,
+    processing_phrase,
+)
+from utils.health import health_tooltip, log_health_summary
 from utils.safety import SafetyGuard
 from utils.tray import TrayIcon
 from utils.wake_feedback import play_wake_beep
 from voice.audio_hub import AudioHub
-from voice.audio_queue import BackgroundListener
 from voice.clap_detector import ClapDetector
 from ai.memory import get_memory
 from utils.scheduler import maybe_startup_greeting
@@ -68,6 +72,8 @@ class Assistant:
         self._ui_wake_shown = False
         self._stt: SpeechToText | None = None
         self._memory = get_memory()
+        self._last_listen_confidence: float | None = None
+        self._health: dict[str, str] = {}
 
     def _wake_instant_ui(self) -> None:
         """Called from wake-word audio thread the moment 'Hey Razor' is detected."""
@@ -79,8 +85,14 @@ class Assistant:
     def run(self) -> None:
         """Run the full assistant loop (console or tray background mode)."""
         self._log_startup()
-        warm_models()
+        self._health = log_health_summary()
         self._stt = get_speech_to_text(self.stt_engine)
+        if config.WARM_MODELS_ON_STARTUP:
+            threading.Thread(
+                target=warm_models,
+                daemon=True,
+                name="razor-warmup",
+            ).start()
         self._start_ui()
         self._start_idle_listening()
 
@@ -104,15 +116,26 @@ class Assistant:
                 trailing_command = self._wait_for_wake_word()
                 if not self._running:
                     break
-                self._handle_activation(trailing_command, source="voice")
+                self._run_activation(source="voice", trailing=trailing_command)
         except KeyboardInterrupt:
             print("\nGoodbye.")
-            self._speak("Catch ya later mate.", personality=False)
+            self._speak(exit_phrase(), personality=False)
         finally:
             self.shutdown()
 
     def activate_once(self, *, source: str = "hotkey") -> None:
-        """Skip wake word and listen for a single command (hotkey / clap / tray)."""
+        """Non-blocking: skip wake word and listen for a single command."""
+        if self._shutting_down:
+            return
+        threading.Thread(
+            target=self._run_activation,
+            kwargs={"source": source},
+            daemon=True,
+            name=f"razor-activate-{source}",
+        ).start()
+
+    def _run_activation(self, *, source: str, trailing: str | None = None) -> None:
+        """Execute one activation cycle (must run off the audio callback thread)."""
         if self._shutting_down:
             return
         if not self._activation_lock.acquire(blocking=False):
@@ -121,7 +144,7 @@ class Assistant:
 
         try:
             self._on_activate(source=source)
-            command = self._listen_for_command()
+            command = trailing or self._listen_for_command()
             self._handle_command(command, source=source)
         finally:
             self._disarm_triggers()
@@ -184,7 +207,7 @@ class Assistant:
                 print("[processing...]")
                 self._ui_set_status("processing")
                 if config.PROCESSING_SPEAK:
-                    self._speak_async("One sec mate.", personality=False)
+                    self._speak_async(processing_phrase(), personality=False)
 
             intent = self.brain.reason(cleaned)
             print(f"Intent: {json.dumps(intent, default=str)}")
@@ -278,9 +301,9 @@ class Assistant:
             intent=intent,
             result=result,
         )
-        self._ui_set_response(result)
         if config.EXECUTE_BEFORE_SPEAK and action not in {"chat", "help"}:
             self._ui_show_done()
+        self._ui_set_response(result)
         return result
 
     def _start_ui(self) -> None:
@@ -338,9 +361,12 @@ class Assistant:
 
         def on_quit() -> None:
             self.shutdown()
-            sys.exit(0)
 
-        self._tray = TrayIcon(on_activate=lambda: self.activate_once(source="tray"), on_quit=on_quit)
+        self._tray = TrayIcon(
+            on_activate=lambda: self.activate_once(source="tray"),
+            on_quit=on_quit,
+            tooltip=health_tooltip(self._health),
+        )
         logger.info("Razor ready — tray mode active (wake word + hotkey + UI).")
         self._tray.run()
 
@@ -351,20 +377,7 @@ class Assistant:
                 trailing = self.wake.wait_for_activation()
                 if not self._running:
                     break
-                if not self._activation_lock.acquire(blocking=False):
-                    self.wake.reset_for_next()
-                    continue
-                try:
-                    self._on_activate(source="voice")
-                    command = trailing or self._listen_for_command()
-                    self._handle_command(command, source="voice")
-                finally:
-                    self._disarm_triggers()
-                    self.wake.reset_for_next()
-                    self._ui_wake_shown = False
-                    self._activation_lock.release()
-                    if self._ui and config.UI_IDLE_VISIBLE:
-                        self._ui.show_idle()
+                self._run_activation(source="voice", trailing=trailing)
 
         self._wake_thread = threading.Thread(target=wake_loop, daemon=True, name="razor-wake")
         self._wake_thread.start()
@@ -375,91 +388,17 @@ class Assistant:
         self._hotkey = GlobalHotkey(config.HOTKEY, lambda: self.activate_once(source="hotkey"))
         self._hotkey.start()
 
-    def _handle_activation(
-        self,
-        trailing_command: str | None,
-        *,
-        source: str,
-    ) -> None:
-        if not self._activation_lock.acquire(blocking=False):
-            return
-        try:
-            self._on_activate(source=source)
-            command = trailing_command or self._listen_for_command()
-            self._handle_command(command, source=source)
-        finally:
-            self._disarm_triggers()
-            self.wake.reset_for_next()
-            self._ui_wake_shown = False
-            self._activation_lock.release()
-            if self._ui and config.UI_IDLE_VISIBLE:
-                self._ui.show_idle()
-
-    def _handle_command(self, command: str | None, *, source: str) -> None:
-        if not command:
-            message = "(no command heard)"
-            print(message)
-            self._speak_async("I didn't catch that.")
-            self._ui_set_response("I didn't catch that — try again?")
-            self.actions.log(event="no_command", source=source, result=message)
-            self._ui_schedule_hide()
-            return
-
-        command = self._clean_command(command)
-        if not is_plausible_command(command):
-            message = "I didn't catch that — try again?"
-            print(message)
-            self._ui_set_response(message)
-            self.actions.log(event="bad_transcript", source=source, result=command)
-            self._speak_async(message)
-            self._ui_schedule_hide()
-            return
-
-        print(f">> {command}")
-        self._ui_set_transcript(command, partial=False)
-        result = self.handle_input(command, source=source)
-        if result == "__EXIT__":
-            self._speak_async("Catch ya later mate.", personality=False)
-            self.shutdown()
-            sys.exit(0)
-
-        if result:
-            print(result)
-            if config.EXECUTE_BEFORE_SPEAK or source in {"voice", "hotkey", "clap"}:
-                self._speak_async(result)
-        print()
-        self._ui_schedule_hide()
-
-    def _wait_for_wake_word(self) -> str | None:
-        self.actions.log(event="wake_listen_start", source="wake_word")
-        trailing = self.wake.wait_for_activation()
-        self.actions.log(
-            event="wake_word_detected",
-            source="wake_word",
-            result=trailing or config.WAKE_RESPONSE,
-        )
-        return trailing
-
-    def _pause_hub(self) -> None:
-        if self._hub and self._hub.is_running:
-            self._hub.stop()
-
-    def _resume_hub(self) -> None:
-        if self._hub and self._running and not self._hub.is_running:
-            self._hub.start()
-
     def _listen_for_command(self) -> str | None:
         import numpy as np
 
         self._ui_set_status("listening")
-        self._pause_hub()
+        self._last_listen_confidence = None
         if self._stt is None:
             self._stt = get_speech_to_text(self.stt_engine)
         stt = self._stt
         stt.reset()
-        background = BackgroundListener()
 
-        result: dict[str, str | None] = {"text": None}
+        result: dict[str, str | float | None] = {"text": None, "confidence": None}
         partial_line = ""
         listening_indicator = False
 
@@ -492,25 +431,79 @@ class Assistant:
                 elif listening_indicator:
                     print("\r" + " " * 24 + "\r", end="")
                 result["text"] = final_text
+                result["confidence"] = stt.last_confidence
                 stt.reset()
 
-        background.start(on_audio)
-        try:
-            while result["text"] is None and self._running:
-                time.sleep(0.05)
-        finally:
-            remaining = stt.flush()
-            background.stop()
-            if result["text"] is None and remaining:
-                result["text"] = remaining
-            self._resume_hub()
+        if self._hub and self._hub.is_running:
+            self._hub.enter_command_mode(on_audio)
+            try:
+                while result["text"] is None and self._running:
+                    time.sleep(0.05)
+                remaining = stt.flush()
+                if result["text"] is None and remaining:
+                    result["text"] = remaining
+                    result["confidence"] = stt.last_confidence
+            finally:
+                self._hub.enter_idle_mode()
+        else:
+            logger.warning("AudioHub not running; command listen unavailable.")
+            return None
 
-            if result["text"] is None and remaining:
-                result["text"] = remaining
-            self._resume_hub()
-
+        self._last_listen_confidence = (
+            float(result["confidence"]) if result.get("confidence") is not None else None
+        )
         text = result["text"]
-        return self._clean_command(text) if text else None
+        return self._clean_command(str(text)) if text else None
+
+    def _handle_command(self, command: str | None, *, source: str) -> None:
+        if not command:
+            message = "(no command heard)"
+            print(message)
+            self._speak_async("I didn't catch that.")
+            self._ui_set_response("I didn't catch that — try again?")
+            self.actions.log(event="no_command", source=source, result=message)
+            self._ui_schedule_hide()
+            return
+
+        command = self._clean_command(command)
+        if not is_plausible_command(command, confidence=self._last_listen_confidence):
+            message = "I didn't catch that — try again?"
+            print(message)
+            self._ui_set_response(message)
+            self.actions.log(
+                event="bad_transcript",
+                source=source,
+                result=command,
+                meta={"confidence": self._last_listen_confidence},
+            )
+            self._speak_async(message)
+            self._ui_schedule_hide()
+            return
+
+        print(f">> {command}")
+        self._ui_set_transcript(command, partial=False)
+        result = self.handle_input(command, source=source)
+        if result == "__EXIT__":
+            self._speak_async(exit_phrase(), personality=False)
+            self.shutdown()
+            return
+
+        if result:
+            print(result)
+            if config.EXECUTE_BEFORE_SPEAK or source in {"voice", "hotkey", "clap"}:
+                self._speak_async(result)
+        print()
+        self._ui_schedule_hide()
+
+    def _wait_for_wake_word(self) -> str | None:
+        self.actions.log(event="wake_listen_start", source="wake_word")
+        trailing = self.wake.wait_for_activation()
+        self.actions.log(
+            event="wake_word_detected",
+            source="wake_word",
+            result=trailing or config.WAKE_RESPONSE,
+        )
+        return trailing
 
     @staticmethod
     def _clean_command(text: str) -> str:

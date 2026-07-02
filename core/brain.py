@@ -55,14 +55,33 @@ class Brain:
 
         logger.info("Agent planning for: %s", cleaned)
         plan = self.agent.plan(cleaned, memory_context=self.memory.get_context_for_prompt())
-        steps = Agent.normalize_plan(plan)
+        steps = self._validate_agent_steps(plan, cleaned)
+        if not steps:
+            return {"action": "unknown", "value": cleaned}
+        if steps[0].get("action") == "__instant__":
+            return steps[0]
         if len(steps) > 1:
             return {"action": "__multi__", "value": steps}
-        if steps and steps[0].get("action") not in {None, "unknown"}:
-            logger.info("Agent intent: %s", steps[0])
-            return steps[0]
+        logger.info("Agent intent: %s", steps[0])
+        return steps[0]
 
-        return {"action": "unknown", "value": cleaned}
+    def _validate_agent_steps(
+        self,
+        plan: dict[str, Any] | list[dict[str, Any]],
+        original_text: str,
+    ) -> list[dict[str, Any]]:
+        raw_steps = Agent.normalize_plan(plan)
+        validated: list[dict[str, Any]] = []
+        for step in raw_steps[:3]:
+            if not isinstance(step, dict):
+                continue
+            intent = self.intent_engine.validate_intent(step, original_text)
+            action = intent.get("action")
+            if action in {None, "unknown"}:
+                logger.warning("Agent step rejected: %s", step)
+                continue
+            validated.append(intent)
+        return validated
 
     def chat(self, text: str) -> str:
         context = self.memory.get_context_for_prompt()
