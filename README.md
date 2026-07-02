@@ -1,4 +1,4 @@
-# Razor AI v0.4 — Jarvis Mode
+# Razor AI v0.4.1 — Jarvis Mode
 
 Local voice assistant for Windows — say **"Hey Razor"** and the UI appears instantly. Reflex commands run in under a second; complex questions use local Ollama.
 
@@ -117,7 +117,13 @@ python main.py --uninstall-startup
 
 ## Troubleshooting
 
-**Slow first command** — Check `razor.log` for "Models warmed". Ensure Ollama is running.
+**Slow startup** — Tray and idle pill appear immediately; Ollama warmup runs in background. Check `razor.log` for `Models warmed` (may arrive ~20s later on CPU).
+
+**Mic stop/start in log** — Fixed in v0.4.1: one AudioHub stream; command mode switches routing without restarting the mic.
+
+**Wake word missed** — Use **Ctrl+Shift+R**; enable `WAKE_DEBUG = True` to tune. Set `CLAP_ENABLED = True` only after wake is reliable.
+
+**Health line** — On startup, `razor.log` shows `Health: mic=ok ollama=ok vosk=ok`. Tray tooltip notes if Ollama is offline.
 
 **ElevenLabs 402** — Set `TTS_PROVIDER = "local"` (default). Session auto-disables ElevenLabs after first 402.
 
